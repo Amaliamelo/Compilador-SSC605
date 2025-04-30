@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
 // Estrutura para representar tokens
 typedef struct {
     char lexema[100];
@@ -14,6 +13,17 @@ typedef struct {
 // Array de tokens (simulação de vetor dinâmico)
 Token tokens[1000];
 int tokenIndex = 0;
+
+// Tabela de palavras reservadas
+const char *tabela_reservados[] = {
+    "program", "var", "integer", "real", "begin", "end", "while", "read", "write",
+    "const", "procedure", "else", "then", "if", "do", "to", "for"
+};
+
+// Vetor de operadores
+const char *operadores[] = {
+    ";", ":", "+", "-", "*", "/", "(", ")", "=", ",", ">", "<", "."
+};
 
 // Função para adicionar um token ao array
 void adicionarToken(const char *lexema, const char *token, int linha, int status) {
@@ -160,29 +170,60 @@ void automatoNumero(const char *aux, int num_linha) {
 
 // Função para imprimir os tokens
 void imprimirTokens() {
+    FILE *arquivoSaida = fopen("saida.txt", "w");
+    if (arquivoSaida == NULL) {
+        printf("Erro ao criar o arquivo de saída: %s\n", "saida.txt");
+        return;
+    }
+
+    fprintf(arquivoSaida, "Lexema\t\tToken\t\tLinha\tStatus\n");
+    fprintf(arquivoSaida, "-----------------------------------------------\n");
+
     for (int i = 0; i < tokenIndex; i++) {
-        printf("Lexema: %s, Token: %s, Linha: %d, Status: %s\n",
+        fprintf(arquivoSaida, "Lexema: %s, Token: %s, Linha: %d, Status: %s\n",
                tokens[i].lexema,
                tokens[i].token,
                tokens[i].linha,
                tokens[i].status ? "Válido" : "Inválido");
     }
+    fclose(arquivoSaida);
+
 }
 
-// Teste do automatoIdentificador
-int main() {
-    automatoIdentificador("var1", 1);
-    //o numero ao lado da váriavel seria o numero da linha em que essa variável está
-    automatoIdentificador("123abc", 2);
-    automatoIdentificador("var_2", 3);
-    automatoIdentificador("Abc123", 4);
-    automatoNumero("123", 1);
-    automatoNumero("-123", 2);
-    automatoNumero("+3.14", 3);
-    automatoNumero("3.", 4);
-    automatoNumero(".45", 5);
-    automatoNumero("abc", 6);
+// Função para verificar se o token é uma palavra
+int ehPalavra(const char *token) {
+    for (int i = 0; token[i] != '\0'; i++) {
+        if (!isalpha(token[i])) { // Se não for letra
+            return 0;
+        }
+    }
+    return 1;
+}
 
-    imprimirTokens();
-    return 0;
+// Função para verificar se o token é um número
+int ehNumero(const char *token) {
+    for (int i = 0; token[i] != '\0'; i++) {
+        if (!isdigit(token[i])) { // Se não for dígito
+            return 0;
+        }
+    }
+    return 1;
+}
+int ehPalavraReservada(const char *lexema) {
+    for (int i = 0; i < sizeof(tabela_reservados) / sizeof(tabela_reservados[0]); i++) {
+        if (strcmp(lexema, tabela_reservados[i]) == 0) {
+            return 1; // Palavra reservada encontrada
+        }
+    }
+    return 0; // Não é palavra reservada
+}
+
+// Função para verificar se o token é um símbolo
+int ehOperador(const char *lexema) {
+    for (int i = 0; i < sizeof(operadores) / sizeof(operadores[0]); i++) {
+        if (strcmp(lexema, operadores[i]) == 0) {
+            return 1; // Operador encontrado
+        }
+    }
+    return 0; // Não é operador
 }
