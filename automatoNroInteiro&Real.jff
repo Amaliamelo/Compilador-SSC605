@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 7.1.--><structure>
+	<type>moore</type>
+	<automaton>
+		<!--The list of states.-->
+		<state id="0" name="q0">
+			<x>51.0</x>
+			<y>132.0</y>
+			<initial/>
+			<output/>
+		</state>
+		<state id="1" name="q1">
+			<x>216.0</x>
+			<y>180.0</y>
+			<output/>
+		</state>
+		<state id="2" name="q2">
+			<x>364.0</x>
+			<y>49.0</y>
+			<output>retorna(cadeia,inteiro); retroceder()</output>
+		</state>
+		<state id="3" name="q3">
+			<x>224.0</x>
+			<y>389.0</y>
+			<output>retorna(cadeia, "erro: número mal formatado")</output>
+		</state>
+		<state id="4" name="q4">
+			<x>525.0</x>
+			<y>290.0</y>
+			<output>retorna(cadeia, real); retroceder()</output>
+		</state>
+		<!--The list of transitions.-->
+		<transition>
+			<from>1</from>
+			<to>3</to>
+			<read>Outros</read>
+			<transout>retorna(cadeia, "erro: número mal formatado")</transout>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>0</to>
+			<read>Carateries não imprimiveis</read>
+			<transout/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>1</to>
+			<read>- +</read>
+			<transout/>
+		</transition>
+		<transition>
+			<from>1</from>
+			<to>2</to>
+			<read>Dígito</read>
+			<transout>retorna(cadeia,inteiro); retroceder()</transout>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>3</to>
+			<read>Outros</read>
+			<transout>retorna(cadeia, "erro: número mal formatado")</transout>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>3</to>
+			<read>Outros</read>
+			<transout>retorna(cadeia, "erro: número mal formatado")</transout>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>2</to>
+			<read>Dígito</read>
+			<transout>retorna(cadeia,inteiro); retroceder()</transout>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>3</to>
+			<read>Outros</read>
+			<transout>retorna(cadeia, "erro: número mal formatado")</transout>
+		</transition>
+		<transition>
+			<from>4</from>
+			<to>4</to>
+			<read>Dígito</read>
+			<transout>retorna(cadeia, real); retroceder()</transout>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>2</to>
+			<read>Dígito</read>
+			<transout>retorna(cadeia,inteiro); retroceder()</transout>
+		</transition>
+		<transition>
+			<from>2</from>
+			<to>4</to>
+			<read>Ponto</read>
+			<transout>retorna(cadeia, real); retroceder()</transout>
+		</transition>
+	</automaton>
+</structure>
