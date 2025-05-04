@@ -1,6 +1,19 @@
-program teste5;
-var a, minhavariavel: integer;
+program leimprime;
+{exemplo 2}
+var a: real;
+var b: integer;
+procedure nomep(x: real);
+var a, c: integer;
 begin
-readd(minhavariavel,@,1.a23);
-a:=2*(minhavariavel+3);
+read(c, a);
+if a<x+c then
+begin
+a:= c+x;
+write(a);
+end
+else c:= a+x;
+end;
+begin {programa principal}
+read(b);
+nomep(b);
 end.
