@@ -21,45 +21,6 @@ char palReservadas[20][20]= {
     "CONST", "VAR", "PROCEDURE", "CALL","BEGIN","END","IF","THEN", "WHILE","DO"
 };
 
-/*int relacional(FILE* textFile, int* boolErro){
-
-SSimb relacionais[] = {
-    {"<>", "simbolo_diferente"},
-    {"<=", "simbolo_menor_igual"},
-    {">=", "simbolo_maior_igual"},
-    {"=", "simbolo_igual"},
-    {">", "simbolo_maior"},
-    {"<", "simbolo_menor"}
-};
-
-char lido[3] = {0}, c;
-lido[2] = '\0';
-int nLidos = 0;
-
-
-if ((nLidos = fread(lido, sizeof(char), 2, textFile)) < 1) return FIM_DE_ARQUIVO;
-
-//fprintf(textSaida, " nLidos = %d, (%s)\n", nLidos, lido);
-
-for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
-   // fprintf(textSaida, "Comparando (%s) com (%s).\n", relacionais[i].simbolo, lido);
-    if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-      //  fprintf(textSaida, "nLidos = %d strlen(relacionais[i].simbolo)) = %d \n", nLidos, strlen(relacionais[i].simbolo));
-        if (*boolErro == 1){
-            fprintf (textSaida, ", <ERRO_LEXICO>\n");
-            *boolErro = 0;
-        }
-        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
-        return ENCONTRADO;
-    }
-}
-
-fseek (textFile, -nLidos, SEEK_CUR);
-fprintf(textSaida, "ftell = (%ld) \n", ftell(textFile));
-return NAO_ENCONTRADO;
-
-}*/
 
 int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     int c;
@@ -224,7 +185,8 @@ int relacional(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
         {">=", "simbolo_maior_igual"},
         {"=", "simbolo_igual"},
         {">", "simbolo_maior"},
-        {"<", "simbolo_menor"}
+        {"<", "simbolo_menor"},
+        {": ", "simbolo_dois_pontos"}
     };
 
     char lido[3] = {0}; // Initialize all elements to zero
@@ -307,44 +269,6 @@ int atribuicao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     //fprintf(textSaida, "SAINDO COM ftell = (%ld)\n", ftell(textFile));
     return NAO_ENCONTRADO;
 }
-
-/*
-int operadorUnario(FILE* textFile){
-
-SSimb relacionais[] = {
-    {"+", "simbolo_mais"},
-    {"-", "simbolo_menos"}
-};
-
-char lido[3], c;
-lido[2] = '\0';
-int nLidos = 0;
-
-do {
-    c = getc(textFile);
-    if (c == EOF) return 0;
-} while (isspace(c));
-
-ungetc(c, textFile);
-
-nLidos = fread (lido, sizeof(char), 1, textFile);
-
-for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
-   // fprintf(textSaida, "Comparando (%s) com (%s).\n", relacionais[i].simbolo, lido);
-    if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-      //  fprintf(textSaida, "nLidos = %d strlen(relacionais[i].simbolo)) = %d \n", nLidos, strlen(relacionais[i].simbolo));
-        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
-        return 1;
-    }
-} 
-
-//fprintf(textSaida, "nLidos = %d\n", nLidos);
-fseek (textFile, -(nLidos), SEEK_CUR);
-return 1;
-
-}*/
-
 
 int operadorMaisMenos(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 

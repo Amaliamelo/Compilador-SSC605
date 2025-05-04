@@ -1,31 +1,34 @@
-Lexema		Token		Linha	Status
------------------------------------------------
-Lexema: program, Token: RESERVADA, Linha: 1, Status: Válido
-Lexema: fatorial, Token: ident, Linha: 1, Status: Válido
-Lexema: {exemplo, Token: SIMBOLO, Linha: 2, Status: Válido
-Lexema: 1}, Token: OUTRO, Linha: 2, Status: Inválido
-Lexema: var, Token: RESERVADA, Linha: 3, Status: Válido
-Lexema: x, Token: ident, Linha: 3, Status: Válido
-Lexema: aux, Token: ident, Linha: 3, Status: Válido
-Lexema: fat, Token: ident, Linha: 3, Status: Válido
-Lexema: integer, Token: RESERVADA, Linha: 3, Status: Válido
-Lexema: begin, Token: RESERVADA, Linha: 4, Status: Válido
-Lexema: read, Token: RESERVADA, Linha: 5, Status: Válido
-Lexema: x, Token: ident, Linha: 5, Status: Válido
-Lexema: fat, Token: ident, Linha: 6, Status: Válido
-Lexema: =, Token: OPERADOR, Linha: 6, Status: Válido
-Lexema: 1, Token: num_inteiro, Linha: 6, Status: Válido
-Lexema: for, Token: RESERVADA, Linha: 7, Status: Válido
-Lexema: aux, Token: ident, Linha: 7, Status: Válido
-Lexema: =, Token: OPERADOR, Linha: 7, Status: Válido
-Lexema: 1, Token: num_inteiro, Linha: 7, Status: Válido
-Lexema: to, Token: RESERVADA, Linha: 7, Status: Válido
-Lexema: x, Token: ident, Linha: 7, Status: Válido
-Lexema: do, Token: RESERVADA, Linha: 7, Status: Válido
-Lexema: begin, Token: RESERVADA, Linha: 8, Status: Válido
-Lexema: fat, Token: ident, Linha: 9, Status: Válido
-Lexema: =, Token: OPERADOR, Linha: 9, Status: Válido
-Lexema: end, Token: RESERVADA, Linha: 10, Status: Válido
-Lexema: write, Token: RESERVADA, Linha: 11, Status: Válido
-Lexema: fat, Token: ident, Linha: 11, Status: Válido
-Lexema: end, Token: RESERVADA, Linha: 12, Status: Válido
+program, ident
+teste5, ident
+;, simbolo_ponto_e_virgula
+var, ident
+a, ident
+,, simbolo_virgula
+minhavariavel, ident
+: , simbolo_dois_pontos
+integer, ident
+;, simbolo_ponto_e_virgula
+begin, ident
+readd, ident
+(, parenteses_esquerdo
+minhavariavel, ident
+,, simbolo_virgula
+@ 1 0 , <ERRO_LEXICO>
+,, simbolo_virgula
+1, numero
+., simbolo_ponto
+a23, ident
+), parenteses_direito
+;, simbolo_ponto_e_virgula
+a, ident
+:=, simbolo_atribuicao
+2, numero
+*, simbolo_multiplicacao
+(, parenteses_esquerdo
+minhavariavel, ident
++, simbolo_mais
+3, numero
+), parenteses_direito
+;, simbolo_ponto_e_virgula
+end, ident
+., simbolo_ponto
