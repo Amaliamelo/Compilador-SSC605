@@ -39,29 +39,29 @@ int nLidos = 0;
 
 if ((nLidos = fread(lido, sizeof(char), 2, textFile)) < 1) return FIM_DE_ARQUIVO;
 
-//printf(" nLidos = %d, (%s)\n", nLidos, lido);
+//fprintf(textSaida, " nLidos = %d, (%s)\n", nLidos, lido);
 
 for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
-   // printf ("Comparando (%s) com (%s).\n", relacionais[i].simbolo, lido);
+   // fprintf(textSaida, "Comparando (%s) com (%s).\n", relacionais[i].simbolo, lido);
     if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-      //  printf("nLidos = %d strlen(relacionais[i].simbolo)) = %d \n", nLidos, strlen(relacionais[i].simbolo));
+      //  fprintf(textSaida, "nLidos = %d strlen(relacionais[i].simbolo)) = %d \n", nLidos, strlen(relacionais[i].simbolo));
         if (*boolErro == 1){
-            printf (", <ERRO_LEXICO>\n");
+            fprintf (textSaida, ", <ERRO_LEXICO>\n");
             *boolErro = 0;
         }
-        printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
         return ENCONTRADO;
     }
 }
 
 fseek (textFile, -nLidos, SEEK_CUR);
-printf ("ftell = (%ld) \n", ftell(textFile));
+fprintf(textSaida, "ftell = (%ld) \n", ftell(textFile));
 return NAO_ENCONTRADO;
 
 }*/
 
-int comentario(FILE* textFile, int* boolErro, int* boolSpace) {
+int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     int c;
     int encontrouAbertura = 0;
 
@@ -75,19 +75,19 @@ int comentario(FILE* textFile, int* boolErro, int* boolSpace) {
     }
 
     encontrouAbertura = 1;
-    printf("{");  // Início do comentário
+    fprintf(textSaida, "{");  // Início do comentário
 
     while ((c = fgetc(textFile)) != EOF) {
-        putchar(c);  // Imprime o conteúdo do comentário
+        fputc(c, textSaida);  // Imprime o conteúdo do comentário
 
         if (c == '}') {
             // Comentário fechado corretamente
             if (*boolErro == 1) {
-                printf(", <ERRO_LEXICO>\n");
+                fprintf(textSaida, ", <ERRO_LEXICO>\n");
                 *boolErro = 0;
                 *boolSpace = 0;
             } else {
-                printf(", comentario\n");
+                fprintf(textSaida, ", comentario\n");
             }
             return ENCONTRADO;
         }
@@ -95,9 +95,9 @@ int comentario(FILE* textFile, int* boolErro, int* boolSpace) {
         if (c == '\n') {
             // Erro: encontrou uma quebra de linha antes da chave fechar
             if (*boolErro == 1) {
-                printf(", <ERRO_LEXICO>\n");
+                fprintf(textSaida, ", <ERRO_LEXICO>\n");
             } else {
-                printf(", <ERRO_LEXICO>\n");
+                fprintf(textSaida, ", <ERRO_LEXICO>\n");
                 *boolErro = 0;
                 *boolSpace = 0;
             }
@@ -107,16 +107,16 @@ int comentario(FILE* textFile, int* boolErro, int* boolSpace) {
 
     // EOF antes de fechar o comentário -> erro
     if (*boolErro == 1) {
-        printf(", <ERRO_LEXICO>\n");
+        fprintf(textSaida, ", <ERRO_LEXICO>\n");
     } else {
-        printf(", <ERRO_LEXICO>\n");
+        fprintf(textSaida, ", <ERRO_LEXICO>\n");
         *boolErro = 0;
         *boolSpace = 0;
     }
     return NAO_ENCONTRADO;
 }
 
-int numero(FILE* textFile, int* boolErro, int* boolSpace) {
+int numero(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     char lido[100] = {0};  // Buffer para guardar o número lido (tamanho arbitrário)
     int c;
     int i = 0;
@@ -143,7 +143,7 @@ int numero(FILE* textFile, int* boolErro, int* boolSpace) {
             lido[i++] = c;
         } else {
             // Excedeu o tamanho do buffer -> trata como erro léxico
-            printf("%s, <ERRO_LEXICO>\n", lido);
+            fprintf(textSaida, "%s, <ERRO_LEXICO>\n", lido);
             *boolErro = 0;
             *boolSpace = 0;
             return ENCONTRADO;
@@ -152,16 +152,16 @@ int numero(FILE* textFile, int* boolErro, int* boolSpace) {
     lido[i] = '\0';  // Finaliza string
 
     if (*boolErro == 1) {
-        printf("%s, <ERRO_LEXICO>\n", lido);
+        fprintf(textSaida, "%s, <ERRO_LEXICO>\n", lido);
         *boolErro = 0;
         *boolSpace = 0;
     } else {
-        printf("%s, numero\n", lido);
+        fprintf(textSaida, "%s, numero\n", lido);
     }
     return ENCONTRADO;
 }
 
-int identificador(FILE* textFile, int* boolErro, int* boolSpace) {
+int identificador(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     char lido[MAX_IDENT_LEN + 1]; // +1 para o \0
     int nLidos = 0;
     int c;
@@ -199,25 +199,25 @@ int identificador(FILE* textFile, int* boolErro, int* boolSpace) {
             // É uma palavra reservada -> não é identificador
            // fseek (textFile, -strlen(palReservadas[i])-1, SEEK_CUR);
             if (*boolErro == 1) {
-                printf(", <ERRO_LEXICO>\n");
+                fprintf(textSaida, ", <ERRO_LEXICO>\n");
                 *boolErro = 0;
                 *boolSpace = 0;
             }
-             printf ("%s, %s \n", palReservadas[i], palReservadas[i]);
+             fprintf (textSaida, "%s, %s \n", palReservadas[i], palReservadas[i]);
             return NAO_ENCONTRADO;
         }
     }
 
     if (*boolErro == 1) {
-        printf(", <ERRO_LEXICO>\n");
+        fprintf(textSaida, ", <ERRO_LEXICO>\n");
         *boolErro = 0;
         *boolSpace = 0;
     }
-    printf("%s, ident\n", lido);
+    fprintf(textSaida, "%s, ident\n", lido);
     return ENCONTRADO;
 }
 
-int relacional(FILE* textFile, int* boolErro, int* boolSpace) {
+int relacional(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     SSimb relacionais[] = {
         {"<>", "simbolo_diferente"},
         {"<=", "simbolo_menor_igual"},
@@ -230,18 +230,18 @@ int relacional(FILE* textFile, int* boolErro, int* boolSpace) {
     char lido[3] = {0}; // Initialize all elements to zero
     int nLidos = 0;
 
-    //printf ("ENTRANDO COM (%ld)\n", ftell(textFile));
+    //fprintf(textSaida, "ENTRANDO COM (%ld)\n", ftell(textFile));
 
     nLidos = fread(lido, sizeof(char), 2, textFile);
     if (nLidos < 1) return FIM_DE_ARQUIVO;
 
-    //printf(" nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
+    //fprintf(textSaida, " nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
 
     for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++) {
         int simbolo_len = strlen(relacionais[i].simbolo);
         if (strncmp(relacionais[i].simbolo, lido, simbolo_len) == 0) {
             // Check if we read enough characters to match the symbol
-            //printf(" nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
+            //fprintf(textSaida, " nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
             if (nLidos >= simbolo_len) {
                 fseek(textFile, simbolo_len - nLidos, SEEK_CUR);
             } else {
@@ -249,23 +249,23 @@ int relacional(FILE* textFile, int* boolErro, int* boolSpace) {
                 fseek(textFile, -nLidos, SEEK_CUR);
                 fread(lido, sizeof(char), simbolo_len, textFile);
             }
-           // printf(" boolErro = %d \n", *boolErro);
+           // fprintf(textSaida, " boolErro = %d \n", *boolErro);
             if (*boolErro == 1) {
-                printf(", <ERRO_LEXICO>\n");
+                fprintf(textSaida, ", <ERRO_LEXICO>\n");
                 *boolErro = 0;
                 *boolSpace = 0;
             }
-            printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+            fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
             return ENCONTRADO;
         }
     }
 
     fseek(textFile, -nLidos, SEEK_CUR);
-    //printf("SAINDO COM ftell = (%ld)\n", ftell(textFile));
+    //fprintf(textSaida, "SAINDO COM ftell = (%ld)\n", ftell(textFile));
     return NAO_ENCONTRADO;
 }
 
-int atribuicao(FILE* textFile, int* boolErro, int* boolSpace) {
+int atribuicao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     SSimb relacionais[] = {
         {":=", "simbolo_atribuicao"},
     };
@@ -273,18 +273,18 @@ int atribuicao(FILE* textFile, int* boolErro, int* boolSpace) {
     char lido[3] = {0}; // Initialize all elements to zero
     int nLidos = 0;
 
-    //printf ("ENTRANDO COM (%ld)\n", ftell(textFile));
+    //fprintf(textSaida, "ENTRANDO COM (%ld)\n", ftell(textFile));
 
     nLidos = fread(lido, sizeof(char), 2, textFile);
     if (nLidos < 1) return FIM_DE_ARQUIVO;
 
-    //printf(" nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
+    //fprintf(textSaida, " nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
 
     for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++) {
         int simbolo_len = strlen(relacionais[i].simbolo);
         if (strncmp(relacionais[i].simbolo, lido, simbolo_len) == 0) {
             // Check if we read enough characters to match the symbol
-            //printf(" nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
+            //fprintf(textSaida, " nLidos = %d, (%s), ftell = %ld\n", nLidos, lido, ftell(textFile));
             if (nLidos >= simbolo_len) {
                 fseek(textFile, simbolo_len - nLidos, SEEK_CUR);
             } else {
@@ -292,19 +292,19 @@ int atribuicao(FILE* textFile, int* boolErro, int* boolSpace) {
                 fseek(textFile, -nLidos, SEEK_CUR);
                 fread(lido, sizeof(char), simbolo_len, textFile);
             }
-           // printf(" boolErro = %d \n", *boolErro);
+           // fprintf(textSaida, " boolErro = %d \n", *boolErro);
             if (*boolErro == 1) {
-                printf(", <ERRO_LEXICO>\n");
+                fprintf(textSaida, ", <ERRO_LEXICO>\n");
                 *boolErro = 0;
                 *boolSpace = 0;
             }
-            printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+            fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
             return ENCONTRADO;
         }
     }
 
     fseek(textFile, -nLidos, SEEK_CUR);
-    //printf("SAINDO COM ftell = (%ld)\n", ftell(textFile));
+    //fprintf(textSaida, "SAINDO COM ftell = (%ld)\n", ftell(textFile));
     return NAO_ENCONTRADO;
 }
 
@@ -330,23 +330,23 @@ ungetc(c, textFile);
 nLidos = fread (lido, sizeof(char), 1, textFile);
 
 for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
-   // printf ("Comparando (%s) com (%s).\n", relacionais[i].simbolo, lido);
+   // fprintf(textSaida, "Comparando (%s) com (%s).\n", relacionais[i].simbolo, lido);
     if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-      //  printf("nLidos = %d strlen(relacionais[i].simbolo)) = %d \n", nLidos, strlen(relacionais[i].simbolo));
-        printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+      //  fprintf(textSaida, "nLidos = %d strlen(relacionais[i].simbolo)) = %d \n", nLidos, strlen(relacionais[i].simbolo));
+        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
         return 1;
     }
 } 
 
-//printf("nLidos = %d\n", nLidos);
+//fprintf(textSaida, "nLidos = %d\n", nLidos);
 fseek (textFile, -(nLidos), SEEK_CUR);
 return 1;
 
 }*/
 
 
-int operadorMaisMenos(FILE* textFile, int* boolErro, int* boolSpace){
+int operadorMaisMenos(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
     {"+", "simbolo_mais"},
@@ -369,11 +369,11 @@ for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
     if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
         if (*boolErro == 1){
-            printf (", <ERRO_LEXICO>\n");
+            fprintf (textSaida, ", <ERRO_LEXICO>\n");
             *boolErro = 0;
             *boolSpace = 0;
         }
-        printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
         return ENCONTRADO;
     }
 }
@@ -385,7 +385,7 @@ return NAO_ENCONTRADO;
 } 
 
 
-int operadorPontuacao(FILE* textFile, int* boolErro, int* boolSpace){
+int operadorPontuacao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
     {",", "simbolo_virgula"},
@@ -409,23 +409,23 @@ for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){;
     if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
         if (*boolErro == 1){
-            printf (", <ERRO_LEXICO>\n");
+            fprintf (textSaida, ", <ERRO_LEXICO>\n");
             *boolErro = 0;
             *boolSpace = 0;
         }
-        printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
         return ENCONTRADO;
     }
 }
 
-//printf("nLidos = %d\n", nLidos);
+//fprintf(textSaida, "nLidos = %d\n", nLidos);
 fseek (textFile, -(nLidos), SEEK_CUR);
 return NAO_ENCONTRADO;
 
 }
 
 
-int operadorDivMult(FILE* textFile, int* boolErro, int* boolSpace){
+int operadorDivMult(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
     {"/", "simbolo_divisao"},
@@ -447,22 +447,22 @@ for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){;
     if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
         if (*boolErro == 1){
-            printf (", <ERRO_LEXICO>\n");
+            fprintf (textSaida, ", <ERRO_LEXICO>\n");
             *boolErro = 0;
             *boolSpace = 0;
         }
-        printf("%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
         return ENCONTRADO;
     }
 }
 
-//printf("nLidos = %d\n", nLidos);
+//fprintf(textSaida, "nLidos = %d\n", nLidos);
 fseek (textFile, -(nLidos), SEEK_CUR);
 return NAO_ENCONTRADO;
 
 }
 
-int ParentesesDireito(FILE* textFile, int* boolErro, int* boolSpace){
+int ParentesesDireito(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
     {")", "parenteses_direito"},
@@ -482,22 +482,22 @@ nLidos = 1;
     if (strncmp(relacionais[0].simbolo, lido, strlen(relacionais[0].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[0].simbolo)-(nLidos), SEEK_CUR);
         if (*boolErro == 1){
-            printf (", <ERRO_LEXICO>\n");
+            fprintf (textSaida, ", <ERRO_LEXICO>\n");
             *boolErro = 0;
             *boolSpace = 0;
         }
-        printf("%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
+        fprintf(textSaida, "%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
         return ENCONTRADO;
     }
 
 
-//printf("nLidos = %d\n", nLidos);
+//ffprintf(textSaida, textSaida, "nLidos = %d\n", nLidos);
 fseek (textFile, -(nLidos), SEEK_CUR);
 return NAO_ENCONTRADO;
 
 }
 
-int ParentesesEsquerdo(FILE* textFile, int* boolErro, int* boolSpace){
+int ParentesesEsquerdo(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
     {"(", "parenteses_esquerdo"},
@@ -518,16 +518,16 @@ nLidos = 1;
     if (strncmp(relacionais[0].simbolo, lido, strlen(relacionais[0].simbolo)) == 0){
         fseek (textFile, strlen(relacionais[0].simbolo)-(nLidos), SEEK_CUR);
         if (*boolErro == 1){
-            printf (", <ERRO_LEXICO>\n");
+            fprintf (textSaida, ", <ERRO_LEXICO>\n");
             *boolErro = 0;
             *boolSpace = 0;
         }
-        printf("%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
+        fprintf(textSaida, "%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
         return ENCONTRADO;
     }
 
 
-//printf("nLidos = %d\n", nLidos);
+//ffprintf(textSaida, textSaida, "nLidos = %d\n", nLidos);
 fseek (textFile, -(nLidos), SEEK_CUR);
 return NAO_ENCONTRADO;
 
@@ -535,54 +535,52 @@ return NAO_ENCONTRADO;
 
 int main(){
     FILE* TextFile = fopen("compilador.txt", "rb");
+    FILE* TextSaida = fopen("saida.txt", "w");
     char erroLexico = 'e';
     int c, result, fimArq = 0, bytesLidos = 0;
     int boolErro = 0, boolSpace = 0;
 
     if (!TextFile) {
-        printf("Failed to open file");
+        fprintf(TextSaida, "Failed to open file");
         return 1;
     }
 
-    while ((result = (relacional(TextFile, &boolErro, &boolSpace) 
-    * operadorMaisMenos(TextFile, &boolErro, &boolSpace)
-    * operadorDivMult(TextFile, &boolErro,  &boolSpace)
-    * ParentesesDireito(TextFile, &boolErro,  &boolSpace)
-    * ParentesesEsquerdo(TextFile, &boolErro, &boolSpace)
-    * identificador(TextFile, &boolErro, &boolSpace)
-    * comentario (TextFile, &boolErro, &boolSpace)
-    * numero (TextFile, &boolErro,  &boolSpace)
-    * operadorPontuacao(TextFile, &boolErro,  &boolSpace)
-    * atribuicao (TextFile, &boolErro,  &boolSpace))) % FIM_DE_ARQUIVO != 0) {  // Se não for fim de arquivo
+    while ((result = (relacional(TextFile, TextSaida, &boolErro, &boolSpace) 
+    * operadorMaisMenos(TextFile, TextSaida, &boolErro, &boolSpace)
+    * operadorDivMult(TextFile, TextSaida, &boolErro,  &boolSpace)
+    * ParentesesDireito(TextFile, TextSaida, &boolErro,  &boolSpace)
+    * ParentesesEsquerdo(TextFile, TextSaida, &boolErro, &boolSpace)
+    * identificador(TextFile, TextSaida, &boolErro, &boolSpace)
+    * comentario (TextFile, TextSaida, &boolErro, &boolSpace)
+    * numero (TextFile, TextSaida, &boolErro,  &boolSpace)
+    * operadorPontuacao(TextFile, TextSaida, &boolErro,  &boolSpace)
+    * atribuicao (TextFile, TextSaida, &boolErro,  &boolSpace))) % FIM_DE_ARQUIVO != 0) {  // Se não for fim de arquivo
 
-       // printf(" (%ld) ", ftell(TextFile));
+       // ffprintf(textSaida, textSaida, " (%ld) ", ftell(TextFile));
         if (result % ENCONTRADO != 0){   //Se nenhum for encontrado
 
             fimArq = (fread(&erroLexico, sizeof(char), 1, TextFile) == 0);
             if (!isspace (erroLexico)){
                 boolErro = 1;
                 if (boolSpace == 1){
-                    printf (", <ERRO_LEXICO>\n");
+                    fprintf (TextSaida, ", <ERRO_LEXICO>\n");
                     boolSpace = 0;
                 }
-                printf ("%c %d %d ", erroLexico, boolErro, boolSpace);
+                fprintf (TextSaida, "%c %d %d ", erroLexico, boolErro, boolSpace);
             } else {
                 if (boolErro == 1) boolSpace = 1;
             }
             if (fimArq && boolErro) { 
-                printf (", <ERRO_LEXICO>\n");
+                fprintf (TextSaida, ", <ERRO_LEXICO>\n");
                 return 0;} 
 
             } 
     } 
     
     if (boolErro) {
-        printf (", <ERRO_LEXICO>\n");
+        fprintf (TextSaida, ", <ERRO_LEXICO>\n");
     } 
 
      fclose(TextFile);
      return 0;
 }
-
-
-// || operadorMaisMenos(TextFile) || ParentesesDireito(TextFile) || ParentesesEsquerdo(TextFile))
