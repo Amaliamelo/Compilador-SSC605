@@ -12,16 +12,19 @@
 
 #define MAX_IDENT_LEN 100
 
+// Estrutura que representa símbolos e seus respectivos nomes (denominadores)
 typedef struct {
     char simbolo[3];
     char denominador[MAX_DEN];
 }SSimb;
 
+// Lista de palavras reservadas da linguagem
 char palReservadas[20][20]= {
     "CONST", "VAR", "PROCEDURE", "CALL","BEGIN","END","IF","THEN", "WHILE","DO"
 };
 
 
+// Função para reconhecer e tratar comentários iniciados com '{' e encerrados com '}'
 int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     int c;
     int encontrouAbertura = 0;
@@ -39,6 +42,7 @@ int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     fprintf(textSaida, "{");  // Início do comentário
 
     while ((c = fgetc(textFile)) != EOF) {
+        if (c != '\n' && c != '\r')
         fputc(c, textSaida);  // Imprime o conteúdo do comentário
 
         if (c == '}') {
@@ -53,30 +57,27 @@ int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
             return ENCONTRADO;
         }
 
-        if (c == '\n') {
+        if (c == '\r' || c =='\n') {
             // Erro: encontrou uma quebra de linha antes da chave fechar
-            if (*boolErro == 1) {
-                fprintf(textSaida, ", <ERRO_LEXICO>\n");
-            } else {
-                fprintf(textSaida, ", <ERRO_LEXICO>\n");
-                *boolErro = 0;
-                *boolSpace = 0;
-            }
+            fseek(textFile, -1, SEEK_CUR);
+        
+            fprintf(textSaida, ", <ERRO_LEXICO>\n");
+            *boolErro = 0;
+            *boolSpace = 0;
+            
             return NAO_ENCONTRADO;
         }
     }
 
     // EOF antes de fechar o comentário -> erro
-    if (*boolErro == 1) {
-        fprintf(textSaida, ", <ERRO_LEXICO>\n");
-    } else {
-        fprintf(textSaida, ", <ERRO_LEXICO>\n");
-        *boolErro = 0;
-        *boolSpace = 0;
-    }
+    fprintf(textSaida, ", <ERRO_LEXICO>\n");
+    *boolErro = 0;
+    *boolSpace = 0;
+
     return NAO_ENCONTRADO;
 }
 
+// Função para reconhecer números inteiros válidos
 int numero(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     char lido[100] = {0};  // Buffer para guardar o número lido (tamanho arbitrário)
     int c;
@@ -122,6 +123,7 @@ int numero(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     return ENCONTRADO;
 }
 
+// Função para reconhecer identificadores (variáveis) ou palavras reservadas
 int identificador(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     char lido[MAX_IDENT_LEN + 1]; // +1 para o \0
     int nLidos = 0;
@@ -178,6 +180,10 @@ int identificador(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
     return ENCONTRADO;
 }
 
+// Função para reconhecer operadores relacionais: <>, <=, >=, =, >, < e dois-pontos
+// Lê até dois caracteres do arquivo e compara com os símbolos relacionais esperados.
+// Se encontrar um dos operadores definidos, escreve no arquivo de saída com seu nome descritivo.
+// Caso contrário, retorna NAO_ENCONTRADO e desfaz a leitura dos caracteres.
 int relacional(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     SSimb relacionais[] = {
         {"<>", "simbolo_diferente"},
@@ -227,6 +233,7 @@ int relacional(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     return NAO_ENCONTRADO;
 }
 
+// Função para reconhecer o símbolo de atribuição :=
 int atribuicao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     SSimb relacionais[] = {
         {":=", "simbolo_atribuicao"},
@@ -270,6 +277,8 @@ int atribuicao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
     return NAO_ENCONTRADO;
 }
 
+
+// Função para reconhecer os operadores aritméticos '+' e '-'
 int operadorMaisMenos(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
@@ -309,6 +318,7 @@ return NAO_ENCONTRADO;
 } 
 
 
+// Função para reconhecer operadores de pontuação: vírgula, ponto e vírgula, ponto, dois-pontos
 int operadorPontuacao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
@@ -386,6 +396,7 @@ return NAO_ENCONTRADO;
 
 }
 
+// Função para reconhecer parênteses direitos: )
 int ParentesesDireito(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
@@ -421,6 +432,7 @@ return NAO_ENCONTRADO;
 
 }
 
+// Função para reconhecer parênteses esquerdos: (
 int ParentesesEsquerdo(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
 SSimb relacionais[] = {
@@ -457,6 +469,7 @@ return NAO_ENCONTRADO;
 
 } 
 
+//Função Principal
 int main(){
     FILE* TextFile = fopen("compilador.txt", "rb");
     FILE* TextSaida = fopen("saida.txt", "w");
@@ -490,7 +503,7 @@ int main(){
                     fprintf (TextSaida, ", <ERRO_LEXICO>\n");
                     boolSpace = 0;
                 }
-                fprintf (TextSaida, "%c %d %d ", erroLexico, boolErro, boolSpace);
+                fprintf (TextSaida, "%c", erroLexico);
             } else {
                 if (boolErro == 1) boolSpace = 1;
             }
