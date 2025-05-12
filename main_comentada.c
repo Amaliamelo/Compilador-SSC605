@@ -506,7 +506,7 @@ int main(){
                     fprintf (TextSaida, ", <ERRO_LEXICO>\n");
                     boolSpace = 0;
                 }
-                fprintf (TextSaida, "%c %d %d ", erroLexico, boolErro, boolSpace);
+                fprintf (TextSaida, "%c", erroLexico);
             } else {
                 if (boolErro == 1) boolSpace = 1;
             }
