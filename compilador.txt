@@ -1,19 +1,13 @@
-program leimprime;
-{exemplo 2}
-var a: real;
-var b: integer;
-procedure nomep(x: real);
-var a, c: integer;
-begin
-read(c, a);
-if a<x+c then
-begin
-a:= c+x;
-write(a);
-end
-else c:= a+x;
-end;
-begin {programa principal}
-read(b);
-nomep(b);
-end.
+VAR n, fat;
+BGIN {erro em palavra chave}
+	n:=4;
+	{erro em identificador de variável}
+	f@t:=1;
+	{erro operador relacional}
+	WHILE n=>1 DO
+		BEGIN
+		fat := fat * n;
+		n:=n-1;
+		END
+{testando comentário não fechado}
+END.

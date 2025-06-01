@@ -1,80 +1,42 @@
-program, ident
-leimprime, ident
-;, simbolo_ponto_e_virgula
-{exemplo 2}, comentario
-var, ident
-a, ident
-: , simbolo_dois_pontos
-real, ident
-;, simbolo_ponto_e_virgula
-var, ident
-b, ident
-: , simbolo_dois_pontos
-integer, ident
-;, simbolo_ponto_e_virgula
-procedure, ident
-nomep, ident
-(, parenteses_esquerdo
-x, ident
-: , simbolo_dois_pontos
-real, ident
-), parenteses_direito
-;, simbolo_ponto_e_virgula
-var, ident
-a, ident
+VAR, VAR 
+n, ident
 ,, simbolo_virgula
-c, ident
-: , simbolo_dois_pontos
-integer, ident
+fat, ident
 ;, simbolo_ponto_e_virgula
-begin, ident
-read, ident
-(, parenteses_esquerdo
-c, ident
-,, simbolo_virgula
-a, ident
-), parenteses_direito
-;, simbolo_ponto_e_virgula
-if, ident
-a, ident
-<, simbolo_menor
-x, ident
-+, simbolo_mais
-c, ident
-then, ident
-begin, ident
-a, ident
+BGIN, ident
+{erro em palavra chave}, comentario
+n, ident
 :=, simbolo_atribuicao
-c, ident
-+, simbolo_mais
-x, ident
+4, numero
 ;, simbolo_ponto_e_virgula
-write, ident
-(, parenteses_esquerdo
-a, ident
-), parenteses_direito
-;, simbolo_ponto_e_virgula
-end, ident
-else, ident
-c, ident
+{erro em identificador de variável}, comentario
+f, ident
+@ 1 0 , <ERRO_LEXICO>
+t, ident
 :=, simbolo_atribuicao
-a, ident
-+, simbolo_mais
-x, ident
+1, numero
 ;, simbolo_ponto_e_virgula
-end, ident
+{erro operador relacional}, comentario
+WHILE, WHILE 
+n, ident
+=, simbolo_igual
+>, simbolo_maior
+1, numero
+DO, DO 
+BEGIN, BEGIN 
+fat, ident
+:=, simbolo_atribuicao
+fat, ident
+*, simbolo_multiplicacao
+n, ident
 ;, simbolo_ponto_e_virgula
-begin, ident
-{programa principal}, comentario
-read, ident
-(, parenteses_esquerdo
-b, ident
-), parenteses_direito
+n, ident
+:=, simbolo_atribuicao
+n, ident
+-, simbolo_menos
+1, numero
 ;, simbolo_ponto_e_virgula
-nomep, ident
-(, parenteses_esquerdo
-b, ident
-), parenteses_direito
-;, simbolo_ponto_e_virgula
-end, ident
+END, END 
+{testando comentário não fechado}, comentario
+END, END 
 ., simbolo_ponto

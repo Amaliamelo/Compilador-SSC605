@@ -1,9 +1,6 @@
 # Nome do compilador
 CC = gcc
 
-# Opções de compilação
-CFLAGS = -o
-
 # Nome do executável
 TARGET = compilador
 

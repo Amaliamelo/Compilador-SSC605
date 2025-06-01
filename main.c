@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAX_DEN 30
+#define MAX_DEN 30 
 #define LEN_ERRO_LEXICO 50
 
 #define ENCONTRADO 5
@@ -272,188 +272,188 @@ int atribuicao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
 
 int operadorMaisMenos(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
-SSimb relacionais[] = {
-    {"+", "simbolo_mais"},
-    {"-", "simbolo_menos"}
-};
+    SSimb relacionais[] = {
+        {"+", "simbolo_mais"},
+        {"-", "simbolo_menos"}
+    };
 
-char lido[2], c;
-lido[1] = '\0';
-int nLidos = 0;
+    char lido[2], c;
+    lido[1] = '\0';
+    int nLidos = 0;
 
 
-if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
+    if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
 
-lido[0] = c;
+    lido[0] = c;
 
-nLidos = 1;
+    nLidos = 1;
 
-for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
+    for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){
 
-    if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-        if (*boolErro == 1){
-            fprintf (textSaida, ", <ERRO_LEXICO>\n");
-            *boolErro = 0;
-            *boolSpace = 0;
+        if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
+            fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
+            if (*boolErro == 1){
+                fprintf (textSaida, ", <ERRO_LEXICO>\n");
+                *boolErro = 0;
+                *boolSpace = 0;
+            }
+            fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+            return ENCONTRADO;
         }
-        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
-        return ENCONTRADO;
     }
-}
 
 
-fseek (textFile, -(nLidos), SEEK_CUR);
-return NAO_ENCONTRADO;
+    fseek (textFile, -(nLidos), SEEK_CUR);
+    return NAO_ENCONTRADO;
 
 } 
 
 
 int operadorPontuacao(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
-SSimb relacionais[] = {
-    {",", "simbolo_virgula"},
-    {";", "simbolo_ponto_e_virgula"},
-    {".", "simbolo_ponto"},
-    {": ", "simbolo_dois_ponto"}
-};
+    SSimb relacionais[] = {
+        {",", "simbolo_virgula"},
+        {";", "simbolo_ponto_e_virgula"},
+        {".", "simbolo_ponto"},
+        {": ", "simbolo_dois_ponto"}
+    };
 
-char lido[2], c;
-lido[1] = '\0';
-int nLidos = 0;
+    char lido[2], c;
+    lido[1] = '\0';
+    int nLidos = 0;
 
 
-if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
+    if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
 
-lido[0] = c;
+    lido[0] = c;
 
-nLidos = 1;
+    nLidos = 1;
 
-for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){;
-    if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-        if (*boolErro == 1){
-            fprintf (textSaida, ", <ERRO_LEXICO>\n");
-            *boolErro = 0;
-            *boolSpace = 0;
+    for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){;
+        if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
+            fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
+            if (*boolErro == 1){
+                fprintf (textSaida, ", <ERRO_LEXICO>\n");
+                *boolErro = 0;
+                *boolSpace = 0;
+            }
+            fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+            return ENCONTRADO;
         }
-        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
-        return ENCONTRADO;
     }
-}
 
-//fprintf(textSaida, "nLidos = %d\n", nLidos);
-fseek (textFile, -(nLidos), SEEK_CUR);
-return NAO_ENCONTRADO;
+    //fprintf(textSaida, "nLidos = %d\n", nLidos);
+    fseek (textFile, -(nLidos), SEEK_CUR);
+    return NAO_ENCONTRADO;
 
 }
 
 
 int operadorDivMult(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
-SSimb relacionais[] = {
-    {"/", "simbolo_divisao"},
-    {"*", "simbolo_multiplicacao"}
-};
+    SSimb relacionais[] = {
+        {"/", "simbolo_divisao"},
+        {"*", "simbolo_multiplicacao"}
+    };
 
-char lido[2], c;
-lido[1] = '\0';
-int nLidos = 0;
+    char lido[2], c;
+    lido[1] = '\0';
+    int nLidos = 0;
 
 
-if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
+    if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
 
-lido[0] = c;
+    lido[0] = c;
 
-nLidos = 1;
+    nLidos = 1;
 
-for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){;
-    if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
-        if (*boolErro == 1){
-            fprintf (textSaida, ", <ERRO_LEXICO>\n");
-            *boolErro = 0;
-            *boolSpace = 0;
+    for (int i = 0; i < sizeof(relacionais) / sizeof(relacionais[0]); i++){;
+        if (strncmp(relacionais[i].simbolo, lido, strlen(relacionais[i].simbolo)) == 0){
+            fseek (textFile, strlen(relacionais[i].simbolo)-(nLidos), SEEK_CUR);
+            if (*boolErro == 1){
+                fprintf (textSaida, ", <ERRO_LEXICO>\n");
+                *boolErro = 0;
+                *boolSpace = 0;
+            }
+            fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
+            return ENCONTRADO;
         }
-        fprintf(textSaida, "%s, %s\n", relacionais[i].simbolo, relacionais[i].denominador);
-        return ENCONTRADO;
     }
-}
 
-//fprintf(textSaida, "nLidos = %d\n", nLidos);
-fseek (textFile, -(nLidos), SEEK_CUR);
-return NAO_ENCONTRADO;
+    //fprintf(textSaida, "nLidos = %d\n", nLidos);
+    fseek (textFile, -(nLidos), SEEK_CUR);
+    return NAO_ENCONTRADO;
 
 }
 
 int ParentesesDireito(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
-SSimb relacionais[] = {
-    {")", "parenteses_direito"},
-};
+    SSimb relacionais[] = {
+        {")", "parenteses_direito"},
+    };
 
-char lido[2], c;
-lido[1] = '\0';
-int nLidos = 0;
+    char lido[2], c;
+    lido[1] = '\0';
+    int nLidos = 0;
 
 
-if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
+    if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
 
-lido[0] = c;
+    lido[0] = c;
 
-nLidos = 1;
+    nLidos = 1;
 
-    if (strncmp(relacionais[0].simbolo, lido, strlen(relacionais[0].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[0].simbolo)-(nLidos), SEEK_CUR);
-        if (*boolErro == 1){
-            fprintf (textSaida, ", <ERRO_LEXICO>\n");
-            *boolErro = 0;
-            *boolSpace = 0;
+        if (strncmp(relacionais[0].simbolo, lido, strlen(relacionais[0].simbolo)) == 0){
+            fseek (textFile, strlen(relacionais[0].simbolo)-(nLidos), SEEK_CUR);
+            if (*boolErro == 1){
+                fprintf (textSaida, ", <ERRO_LEXICO>\n");
+                *boolErro = 0;
+                *boolSpace = 0;
+            }
+            fprintf(textSaida, "%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
+            return ENCONTRADO;
         }
-        fprintf(textSaida, "%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
-        return ENCONTRADO;
-    }
 
 
-//ffprintf(textSaida, textSaida, "nLidos = %d\n", nLidos);
-fseek (textFile, -(nLidos), SEEK_CUR);
-return NAO_ENCONTRADO;
+    //ffprintf(textSaida, textSaida, "nLidos = %d\n", nLidos);
+    fseek (textFile, -(nLidos), SEEK_CUR);
+    return NAO_ENCONTRADO;
 
 }
 
 int ParentesesEsquerdo(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace){
 
-SSimb relacionais[] = {
-    {"(", "parenteses_esquerdo"},
-};
+    SSimb relacionais[] = {
+        {"(", "parenteses_esquerdo"},
+    };
 
-char lido[2], c;
-lido[1] = '\0';
-int nLidos = 0;
+    char lido[2], c;
+    lido[1] = '\0';
+    int nLidos = 0;
 
-if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
-
-
-lido[0] = c;
-
-nLidos = 1;
+    if (fread(&c, sizeof(char), 1, textFile) != 1) return FIM_DE_ARQUIVO;
 
 
-    if (strncmp(relacionais[0].simbolo, lido, strlen(relacionais[0].simbolo)) == 0){
-        fseek (textFile, strlen(relacionais[0].simbolo)-(nLidos), SEEK_CUR);
-        if (*boolErro == 1){
-            fprintf (textSaida, ", <ERRO_LEXICO>\n");
-            *boolErro = 0;
-            *boolSpace = 0;
+    lido[0] = c;
+
+    nLidos = 1;
+
+
+        if (strncmp(relacionais[0].simbolo, lido, strlen(relacionais[0].simbolo)) == 0){
+            fseek (textFile, strlen(relacionais[0].simbolo)-(nLidos), SEEK_CUR);
+            if (*boolErro == 1){
+                fprintf (textSaida, ", <ERRO_LEXICO>\n");
+                *boolErro = 0;
+                *boolSpace = 0;
+            }
+            fprintf(textSaida, "%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
+            return ENCONTRADO;
         }
-        fprintf(textSaida, "%s, %s\n", relacionais[0].simbolo, relacionais[0].denominador);
-        return ENCONTRADO;
-    }
 
 
-//ffprintf(textSaida, textSaida, "nLidos = %d\n", nLidos);
-fseek (textFile, -(nLidos), SEEK_CUR);
-return NAO_ENCONTRADO;
+    //ffprintf(textSaida, textSaida, "nLidos = %d\n", nLidos);
+    fseek (textFile, -(nLidos), SEEK_CUR);
+    return NAO_ENCONTRADO;
 
 } 
 
