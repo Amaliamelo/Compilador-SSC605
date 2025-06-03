@@ -1,42 +1,49 @@
 VAR, VAR 
-n, ident
+x, ident
 ,, simbolo_virgula
-fat, ident
+y, ident
 ;, simbolo_ponto_e_virgula
-BGIN, ident
-{erro em palavra chave}, comentario
-n, ident
-:=, simbolo_atribuicao
-4, numero
+{erro de identificador de procedimento}, comentario
+PROCEDURE, PROCEDURE 
+som, ident
+@, <ERRO_LEXICO>
 ;, simbolo_ponto_e_virgula
-{erro em identificador de variável}, comentario
-f, ident
-@ 1 0 , <ERRO_LEXICO>
-t, ident
-:=, simbolo_atribuicao
-1, numero
+VAR, VAR 
+a, ident
+,, simbolo_virgula
+b, ident
+,, simbolo_virgula
+c, ident
 ;, simbolo_ponto_e_virgula
-{erro operador relacional}, comentario
-WHILE, WHILE 
-n, ident
-=, simbolo_igual
->, simbolo_maior
-1, numero
-DO, DO 
 BEGIN, BEGIN 
-fat, ident
+a, ident
 :=, simbolo_atribuicao
-fat, ident
-*, simbolo_multiplicacao
-n, ident
+x, ident
 ;, simbolo_ponto_e_virgula
-n, ident
+b, ident
 :=, simbolo_atribuicao
-n, ident
--, simbolo_menos
-1, numero
+y, ident
 ;, simbolo_ponto_e_virgula
+c, ident
+:=, simbolo_atribuicao
+a, ident
++, simbolo_mais
+b, ident
 END, END 
-{testando comentário não fechado}, comentario
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN 
+x, ident
+=, simbolo_igual
+2, numero
+., simbolo_ponto
+3, numero
+;, simbolo_ponto_e_virgula
+{erro de tipo de número}, comentario
+y, ident
+=, simbolo_igual
+3, numero
+;, simbolo_ponto_e_virgula
+CALL, CALL 
+soma, ident
 END, END 
 ., simbolo_ponto
