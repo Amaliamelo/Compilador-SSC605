@@ -1,54 +1,35 @@
-#include "lexico.h"
+#include "lexico.h" // Inclui as definições e funções do analisador léxico
+#include "parser.h" // Inclui as definições e funções do analisador sintático
 
-//Função Principal
+// Função principal do programa
 int main(){
+    // Abre o arquivo de entrada (programa PL/0) para leitura binária
     FILE* TextFile = fopen("compilador.txt", "rb");
+    // Abre o arquivo de saída para escrita
     FILE* TextSaida = fopen("saida.txt", "w");
-    char erroLexico = 'e';
-    int c, result, fimArq = 0, bytesLidos = 0;
-    int boolErro = 0, boolSpace = 0;
 
+    // Verifica se o arquivo de entrada foi aberto com sucesso
     if (!TextFile) {
-        fprintf(TextSaida, "Failed to open file");
-        return 1;
+        fprintf(stderr, "Failed to open input file 'compilador.txt'\n");
+        if (TextSaida) fclose(TextSaida); // Fecha o arquivo de saída se ele foi aberto
+        return 1; // Retorna código de erro
+    }
+    // Verifica se o arquivo de saída foi aberto com sucesso
+    if (!TextSaida) {
+        fprintf(stderr, "Failed to open output file 'saida.txt'\n");
+        if (TextFile) fclose(TextFile); // Fecha o arquivo de entrada se ele foi aberto
+        return 1; // Retorna código de erro
     }
 
-    while ((result = (relacional(TextFile, TextSaida, &boolErro, &boolSpace) 
-    * operadorMaisMenos(TextFile, TextSaida, &boolErro, &boolSpace)
-    * operadorDivMult(TextFile, TextSaida, &boolErro,  &boolSpace)
-    * ParentesesDireito(TextFile, TextSaida, &boolErro,  &boolSpace)
-    * ParentesesEsquerdo(TextFile, TextSaida, &boolErro, &boolSpace)
-    * identificador(TextFile, TextSaida, &boolErro, &boolSpace)
-    * comentario (TextFile, TextSaida, &boolErro, &boolSpace)
-    * numero (TextFile, TextSaida, &boolErro,  &boolSpace)
-    * operadorPontuacao(TextFile, TextSaida, &boolErro,  &boolSpace)
-    * atribuicao (TextFile, TextSaida, &boolErro,  &boolSpace))) % FIM_DE_ARQUIVO != 0) {  // Se não for fim de arquivo
+    // Inicializa o analisador léxico, passando os ponteiros dos arquivos
+    inicializarLexico(TextFile, TextSaida);
 
-       // ffprintf(textSaida, textSaida, " (%ld) ", ftell(TextFile));
-        if (result % ENCONTRADO != 0){   //Se nenhum for encontrado
+    // Inicia a análise sintática do programa
+    analisarSintaticamente();
 
-            fimArq = (fread(&erroLexico, sizeof(char), 1, TextFile) == 0);
-            if (!isspace (erroLexico)){
-                boolErro = 1;
-                if (boolSpace == 1){
-                    fprintf (TextSaida, ", <ERRO_LEXICO>\n");
-                    boolSpace = 0;
-                }
-                fprintf (TextSaida, "%c", erroLexico);
-            } else {
-                if (boolErro == 1) boolSpace = 1;
-            }
-            if (fimArq && boolErro) { 
-                fprintf (TextSaida, ", <ERRO_LEXICO>\n");
-                return 0;} 
-
-            } 
-    } 
+    // Fecha os arquivos após a conclusão da análise
+    fclose(TextFile);
+    fclose(TextSaida);
     
-    if (boolErro) {
-        fprintf (TextSaida, ", <ERRO_LEXICO>\n");
-    } 
-
-     fclose(TextFile);
-     return 0;
+    return 0; // Retorna sucesso
 }
