@@ -17,7 +17,8 @@
 // Tipos de tokens reconhecidos pelo analisador léxico
 typedef enum {
     TOKEN_IDENT,
-    TOKEN_NUMERO,
+    TOKEN_NUMERO_INT, // Para números inteiros
+    TOKEN_NUMERO_REAL, // Para números reais
     TOKEN_CONST,
     TOKEN_VAR,
     TOKEN_PROCEDURE,
@@ -28,6 +29,14 @@ typedef enum {
     TOKEN_THEN,
     TOKEN_WHILE,
     TOKEN_DO,
+    TOKEN_READ,         // Novo: read
+    TOKEN_WRITE,        // Novo: write
+    TOKEN_FOR,          // Novo: for
+    TOKEN_TO,           // Novo: to
+    TOKEN_REAL,         // Novo: real
+    TOKEN_INTEGER,      // Novo: integer
+    TOKEN_PROGRAM,      // Novo: program
+    TOKEN_ELSE,         // NOVO: else
     TOKEN_IGUAL,          // =
     TOKEN_DIFERENTE,      // <>
     TOKEN_MENOR,          // <
@@ -44,7 +53,7 @@ typedef enum {
     TOKEN_VIRGULA,        // ,
     TOKEN_PONTO_E_VIRGULA,// ;
     TOKEN_PONTO,          // .
-    TOKEN_DOIS_PONTOS,    // :
+    TOKEN_DOIS_PONTOS,    // : // Usado para tipos, e não mais para atribuicao sozinha
     TOKEN_COMENTARIO,     // { ... }
     TOKEN_EOF,            // Fim de arquivo
     TOKEN_ERRO_LEXICO     // Erro léxico (caractere não reconhecido ou token malformado)
@@ -54,7 +63,8 @@ typedef enum {
 typedef struct {
     TipoToken tipo;
     char lexema[MAX_IDENT_LEN + 1]; // O texto do token
-    int valor_numerico;             // Para tokens numéricos
+    int valor_numerico_int;         // Para tokens numéricos inteiros
+    double valor_numerico_real;     // Para tokens numéricos reais
 } Token;
 
 // Variáveis globais para o analisador léxico (acessíveis externamente)
@@ -73,7 +83,7 @@ void proximoToken();
 // Cada função tenta reconhecer um tipo específico de token e preenche a estrutura Token.
 // Retorna ENCONTRADO, NAO_ENCONTRADO ou FIM_DE_ARQUIVO.
 int _comentario(Token* token);
-int _numero(Token* token);
+int _numero(Token* token); // Vai tratar int e real
 int _identificador(Token* token);
 int _relacional(Token* token);
 int _atribuicao(Token* token);
