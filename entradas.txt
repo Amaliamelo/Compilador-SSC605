@@ -4,3 +4,5 @@ begin
 readd(minhavariavel,@,1.a23);
 a:=2*(minhavariavel+3);
 end.
+
+-----------------------------------------------------------
