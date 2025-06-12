@@ -59,174 +59,193 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
     int c;
     long initial_pos;
 
-    // Pula espaços em branco e trata comentários
-    while (1) {
+    // Loop principal para obter o próximo token válido
+    while (1) { // Este loop continua até encontrar um token VÁLIDO ou EOF
+        // Pula espaços em branco e trata comentários
+        // O loop interno abaixo garantirá que `c` contenha o primeiro caractere
+        // de um potencial token ou EOF.
+        while (1) {
+            c = fgetc(textFile);
+            if (c == EOF) {
+                current_token.type = TOKEN_EOF;
+                strcpy(current_token.lexeme, "EOF");
+                return; // Fim do arquivo, saímos
+            }
+            if (isspace(c)) {
+                // Continua pulando espaços
+                continue;
+            } else if (c == '{') { // Possível início de comentário
+                fseek(textFile, -1, SEEK_CUR); // Coloca o '{' de volta
+                if (comentario(textFile, textSaida, boolErro, boolSpace) == ENCONTRADO) {
+                    // Comentário tratado (pulado ou erro reportado), continua procurando o próximo token
+                    continue; // Volta para o início do loop externo para pegar o próximo caractere
+                } else {
+                    // Se 'comentario' retornou NAO_ENCONTRADO (não era '{'),
+                    // isto não deveria acontecer se `c` era '{'.
+                    // Se acontecer, significa que o caractere '{' não foi consumido,
+                    // então tratamos ele como um caractere normal no `switch` abaixo.
+                    fseek(textFile, -1, SEEK_CUR); // Coloca o '{' de volta para ser tratado
+                    break; // Sai do loop interno para processar '{'
+                }
+            } else {
+                fseek(textFile, -1, SEEK_CUR); // Não é espaço nem '{', coloca o caractere de volta
+                break; // Sai do loop interno, `c` agora é o primeiro caractere do potencial token
+            }
+        }
+
+        // --- Início da tentativa de reconhecimento do token ---
+        initial_pos = ftell(textFile); // Salva a posição antes de tentar reconhecer o token
+
+        // Tentar reconhecer símbolos multi-caractere primeiro (ex: :=, <>, <=, >=)
+        char lookahead[3] = {0}; // Buffer para 2 caracteres + \0
+        int chars_read_initial = fread(lookahead, sizeof(char), 2, textFile); // Tenta ler 2 caracteres
+
+        if (chars_read_initial > 0) {
+            int found_multi_char_op = 0;
+            SSimb relOpAssign[] = {
+                {"<>", "simbolo_diferente", TOKEN_NEQ},
+                {"<=", "simbolo_menor_igual", TOKEN_LE},
+                {">=", "simbolo_maior_igual", TOKEN_GE},
+                {":=", "simbolo_atribuicao", TOKEN_ASSIGN},
+                {"=", "simbolo_igual", TOKEN_EQ}, // Colocado após := para evitar conflito
+                {">", "simbolo_maior", TOKEN_GT}, // Colocado após >= para evitar conflito
+                {"<", "simbolo_menor", TOKEN_LT}, // Colocado após <= para evitar conflito
+            };
+
+            // É importante ordenar `relOpAssign` para que os tokens mais longos sejam verificados primeiro,
+            // ou ajustar a lógica. Por exemplo, ">=" deve ser testado antes de ">".
+            // Já fiz isso na ordem do array acima.
+            for (int i = 0; i < sizeof(relOpAssign) / sizeof(SSimb); i++) {
+                if (strlen(relOpAssign[i].simbolo) <= chars_read_initial &&
+                    strncmp(relOpAssign[i].simbolo, lookahead, strlen(relOpAssign[i].simbolo)) == 0) {
+                    // Match encontrado
+                    fseek(textFile, strlen(relOpAssign[i].simbolo) - chars_read_initial, SEEK_CUR); // Ajusta a posição do arquivo
+                    current_token.type = relOpAssign[i].token_type;
+                    strcpy(current_token.lexeme, relOpAssign[i].simbolo);
+                    fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
+                    return; // Retorna o token reconhecido
+                }
+            }
+        }
+        fseek(textFile, initial_pos, SEEK_SET); // Volta à posição inicial se não achou match de 2 caracteres
+
+        // Tentar identificar palavras reservadas e identificadores
+        char ident_buffer[MAX_IDENT_LEN + 1] = {0};
+        int idx = 0;
+        c = fgetc(textFile); // Lê o primeiro caractere
+        if (isalpha(c)) {
+            ident_buffer[idx++] = c;
+            while ((c = fgetc(textFile)) != EOF && isalnum(c)) {
+                if (idx < MAX_IDENT_LEN) {
+                    ident_buffer[idx++] = c;
+                } else {
+                    // Identificador muito longo, erro léxico
+                    strcpy(current_token.lexeme, ident_buffer);
+                    current_token.type = TOKEN_ERROR;
+                    *boolErro = 1;
+                    fprintf(textSaida, "%s, <ERRO_LEXICO> (Identificador muito longo)\n", current_token.lexeme);
+                    // Não retorna AQUI. Apenas reporta o erro e tenta continuar no loop externo.
+                    // A `current_token.type` está TOKEN_ERROR, mas precisamos consumir o restante
+                    // do identificador muito longo para não travar.
+                    while ((c = fgetc(textFile)) != EOF && isalnum(c)) {} // Consome o restante
+                    fseek(textFile, -1, SEEK_CUR); // Volta o caractere não alfanumérico
+                    // Depois de reportar o erro e consumir, o loop `while(1)` externo continuará
+                    // tentando encontrar o próximo token válido.
+                    continue; // Volta para o início do loop `while(1)` externo
+                }
+            }
+            fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não alfanumérico de volta
+            ident_buffer[idx] = '\0';
+
+            // Verificar se é palavra reservada
+            for (int j = 0; j < sizeof(palReservadas) / sizeof(palReservadas[0]); j++) {
+                if (strcmp(palReservadas[j], ident_buffer) == 0) {
+                    // É palavra reservada - use o mapeamento correto para TokenType
+                    if (strcmp(ident_buffer, "CONST") == 0) current_token.type = TOKEN_CONST;
+                    else if (strcmp(ident_buffer, "VAR") == 0) current_token.type = TOKEN_VAR;
+                    else if (strcmp(ident_buffer, "PROCEDURE") == 0) current_token.type = TOKEN_PROCEDURE;
+                    else if (strcmp(ident_buffer, "CALL") == 0) current_token.type = TOKEN_CALL;
+                    else if (strcmp(ident_buffer, "BEGIN") == 0) current_token.type = TOKEN_BEGIN;
+                    else if (strcmp(ident_buffer, "END") == 0) current_token.type = TOKEN_END;
+                    else if (strcmp(ident_buffer, "IF") == 0) current_token.type = TOKEN_IF;
+                    else if (strcmp(ident_buffer, "THEN") == 0) current_token.type = TOKEN_THEN;
+                    else if (strcmp(ident_buffer, "WHILE") == 0) current_token.type = TOKEN_WHILE;
+                    else if (strcmp(ident_buffer, "DO") == 0) current_token.type = TOKEN_DO;
+                    else if (strcmp(ident_buffer, "ODD") == 0) current_token.type = TOKEN_ODD;
+                    strcpy(current_token.lexeme, ident_buffer);
+                    fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
+                    return; // Retorna o token reconhecido
+                }
+            }
+            // Se não é palavra reservada, é um identificador
+            current_token.type = TOKEN_IDENT;
+            strcpy(current_token.lexeme, ident_buffer);
+            fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
+            return; // Retorna o token reconhecido
+        }
+        fseek(textFile, initial_pos, SEEK_SET); // Volta a posição se não começou com letra
+
+        // Tentar números
+        idx = 0;
+        char num_buffer[MAX_IDENT_LEN + 1] = {0}; // Reutilizando MAX_IDENT_LEN para números
         c = fgetc(textFile);
-        if (c == EOF) {
+        if (isdigit(c)) {
+            num_buffer[idx++] = c;
+            while ((c = fgetc(textFile)) != EOF && isdigit(c)) {
+                if (idx < MAX_IDENT_LEN) {
+                    num_buffer[idx++] = c;
+                } else {
+                    // Número muito longo
+                    strcpy(current_token.lexeme, num_buffer);
+                    current_token.type = TOKEN_ERROR;
+                    *boolErro = 1;
+                    fprintf(textSaida, "%s, <ERRO_LEXICO> (Número muito longo)\n", current_token.lexeme);
+                    while ((c = fgetc(textFile)) != EOF && isdigit(c)) {} // Consome o restante
+                    fseek(textFile, -1, SEEK_CUR); // Volta o caractere não dígito
+                    continue; // Volta para o início do loop `while(1)` externo
+                }
+            }
+            fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não dígito de volta
+            num_buffer[idx] = '\0';
+            current_token.type = TOKEN_NUMERO;
+            strcpy(current_token.lexeme, num_buffer);
+            fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
+            return; // Retorna o token reconhecido
+        }
+        fseek(textFile, initial_pos, SEEK_SET); // Volta a posição se não começou com dígito
+
+        // Tentar outros símbolos de um caractere
+        c = fgetc(textFile); // Lê um caractere para verificar
+        if (c == EOF) { // Já verificamos EOF no início, mas para segurança
             current_token.type = TOKEN_EOF;
             strcpy(current_token.lexeme, "EOF");
             return;
         }
-        if (isspace(c)) {
-            // Continua pulando espaços
-            continue;
-        } else if (c == '{') { // Possível início de comentário
-            fseek(textFile, -1, SEEK_CUR); // Coloca o '{' de volta para a função `comentario`
-            if (comentario(textFile, textSaida, boolErro, boolSpace) == ENCONTRADO) {
-                // Comentário foi tratado (pulado ou erro reportado), continua procurando o próximo token
-                continue;
-            } else {
-                // Se comentario retornou NAO_ENCONTRADO (não era '{'), saímos do loop
-                // Isso não deve acontecer se a primeira checagem de `c` foi '{'.
-                // Se chegou aqui, é um erro de lógica da `comentario` ou do loop.
-                // Por segurança, vamos apenas sair e deixar o caractere original ser tratado.
-                fseek(textFile, -1, SEEK_CUR); // Coloca o '{' de volta
-                break;
-            }
-        } else {
-            fseek(textFile, -1, SEEK_CUR); // Não é espaço nem '{', coloca o caractere de volta
-            break; // Sai do loop para processar o caractere
-        }
-    }
-
-    initial_pos = ftell(textFile); // Salva a posição antes de tentar reconhecer o token
-
-    // Array de símbolos multi-caractere e relacionais
-    SSimb relOpAssign[] = {
-        {"<>", "simbolo_diferente", TOKEN_NEQ},
-        {"<=", "simbolo_menor_igual", TOKEN_LE},
-        {">=", "simbolo_maior_igual", TOKEN_GE},
-        {":=", "simbolo_atribuicao", TOKEN_ASSIGN},
-        {"=", "simbolo_igual", TOKEN_EQ},
-        {">", "simbolo_maior", TOKEN_GT},
-        {"<", "simbolo_menor", TOKEN_LT},
-        // ":", "simbolo_dois_pontos", TOKEN_COLON  // Não na gramática PL/0
-    };
-
-    // Tentar reconhecer símbolos multi-caractere primeiro (ex: :=, <>, <=, >=)
-    char lookahead[3] = {0}; // Buffer para 2 caracteres + \0
-    int chars_read = fread(lookahead, sizeof(char), 2, textFile); // Tenta ler 2 caracteres para checar multi-char
-
-    if (chars_read > 0) {
-        for (int i = 0; i < sizeof(relOpAssign) / sizeof(SSimb); i++) {
-            if (strlen(relOpAssign[i].simbolo) <= chars_read &&
-                strncmp(relOpAssign[i].simbolo, lookahead, strlen(relOpAssign[i].simbolo)) == 0) {
-                // Match encontrado
-                fseek(textFile, strlen(relOpAssign[i].simbolo) - chars_read, SEEK_CUR); // Ajusta a posição do arquivo
-                current_token.type = relOpAssign[i].token_type;
-                strcpy(current_token.lexeme, relOpAssign[i].simbolo);
-                fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
-                return;
-            }
-        }
-    }
-    fseek(textFile, initial_pos, SEEK_SET); // Volta à posição inicial se não achou match de 2 caracteres
-
-    // Tentar identificar palavras reservadas e identificadores
-    char ident_buffer[MAX_IDENT_LEN + 1] = {0};
-    int idx = 0;
-    c = fgetc(textFile);
-    if (isalpha(c)) {
-        ident_buffer[idx++] = c;
-        while ((c = fgetc(textFile)) != EOF && isalnum(c)) {
-            if (idx < MAX_IDENT_LEN) {
-                ident_buffer[idx++] = c;
-            } else {
-                // Identificador muito longo, erro léxico
-                strcpy(current_token.lexeme, ident_buffer);
+        switch (c) {
+            case '+': current_token.type = TOKEN_PLUS; strcpy(current_token.lexeme, "+"); break;
+            case '-': current_token.type = TOKEN_MINUS; strcpy(current_token.lexeme, "-"); break;
+            case '*': current_token.type = TOKEN_MULTIPLY; strcpy(current_token.lexeme, "*"); break;
+            case '/': current_token.type = TOKEN_DIVIDE; strcpy(current_token.lexeme, "/"); break;
+            case '(': current_token.type = TOKEN_LPAREN; strcpy(current_token.lexeme, "("); break;
+            case ')': current_token.type = TOKEN_RPAREN; strcpy(current_token.lexeme, ")"); break;
+            case ',': current_token.type = TOKEN_COMMA; strcpy(current_token.lexeme, ","); break;
+            case ';': current_token.type = TOKEN_SEMICOLON; strcpy(current_token.lexeme, ";"); break;
+            case '.': current_token.type = TOKEN_PERIOD; strcpy(current_token.lexeme, "."); break;
+            case ':': current_token.type = TOKEN_COLON; strcpy(current_token.lexeme, ":"); break; // Se ':' for um token separado
+            default:
+                // Caractere não reconhecido (erro léxico)
                 current_token.type = TOKEN_ERROR;
-                *boolErro = 1;
-                fprintf(textSaida, "%s, <ERRO_LEXICO> (Identificador muito longo)\n", current_token.lexeme);
-                return;
-            }
+                current_token.lexeme[0] = c;
+                current_token.lexeme[1] = '\0'; // Garante que é uma string válida
+                *boolErro = 1; // Marca erro léxico
+                fprintf(textSaida, "%s, <ERRO_LEXICO> (Caractere inválido)\n", current_token.lexeme);
+                // Não retorna AQUI. Apenas reporta o erro e o loop `while(1)` externo continuará
+                // tentando encontrar o próximo token válido a partir do *próximo* caractere.
+                continue; // Volta para o início do loop `while(1)` externo para pegar o próximo caractere
         }
-        fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não alfanumérico de volta
-        ident_buffer[idx] = '\0';
-
-        // Verificar se é palavra reservada
-        for (int j = 0; j < sizeof(palReservadas) / sizeof(palReservadas[0]); j++) {
-            if (strcmp(palReservadas[j], ident_buffer) == 0) {
-                // É palavra reservada - use o mapeamento correto para TokenType
-                // A ordem no enum TokenType e em palReservadas deve ser consistente.
-                if (strcmp(ident_buffer, "CONST") == 0) current_token.type = TOKEN_CONST;
-                else if (strcmp(ident_buffer, "VAR") == 0) current_token.type = TOKEN_VAR;
-                else if (strcmp(ident_buffer, "PROCEDURE") == 0) current_token.type = TOKEN_PROCEDURE;
-                else if (strcmp(ident_buffer, "CALL") == 0) current_token.type = TOKEN_CALL;
-                else if (strcmp(ident_buffer, "BEGIN") == 0) current_token.type = TOKEN_BEGIN;
-                else if (strcmp(ident_buffer, "END") == 0) current_token.type = TOKEN_END;
-                else if (strcmp(ident_buffer, "IF") == 0) current_token.type = TOKEN_IF;
-                else if (strcmp(ident_buffer, "THEN") == 0) current_token.type = TOKEN_THEN;
-                else if (strcmp(ident_buffer, "WHILE") == 0) current_token.type = TOKEN_WHILE;
-                else if (strcmp(ident_buffer, "DO") == 0) current_token.type = TOKEN_DO;
-                else if (strcmp(ident_buffer, "ODD") == 0) current_token.type = TOKEN_ODD;
-                // Adicione mais para outras palavras reservadas se houver
-                strcpy(current_token.lexeme, ident_buffer);
-                fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
-                return;
-            }
-        }
-        // Se não é palavra reservada, é um identificador
-        current_token.type = TOKEN_IDENT;
-        strcpy(current_token.lexeme, ident_buffer);
         fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
-        return;
+        return; // Retorna o token reconhecido (mesmo que seja um dos de 1 caractere)
     }
-    fseek(textFile, initial_pos, SEEK_SET); // Volta a posição se não começou com letra
-
-    // Tentar números
-    idx = 0;
-    char num_buffer[MAX_IDENT_LEN + 1] = {0}; // Reutilizando MAX_IDENT_LEN para números
-    c = fgetc(textFile);
-    if (isdigit(c)) {
-        num_buffer[idx++] = c;
-        while ((c = fgetc(textFile)) != EOF && isdigit(c)) {
-            if (idx < MAX_IDENT_LEN) {
-                num_buffer[idx++] = c;
-            } else {
-                // Número muito longo
-                strcpy(current_token.lexeme, num_buffer);
-                current_token.type = TOKEN_ERROR;
-                *boolErro = 1;
-                fprintf(textSaida, "%s, <ERRO_LEXICO> (Número muito longo)\n", current_token.lexeme);
-                return;
-            }
-        }
-        fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não dígito de volta
-        num_buffer[idx] = '\0';
-        current_token.type = TOKEN_NUMERO;
-        strcpy(current_token.lexeme, num_buffer);
-        fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
-        return;
-    }
-    fseek(textFile, initial_pos, SEEK_SET); // Volta a posição se não começou com dígito
-
-    // Tentar outros símbolos de um caractere
-    c = fgetc(textFile); // Lê um caractere para verificar
-    if (c == EOF) {
-        current_token.type = TOKEN_EOF;
-        strcpy(current_token.lexeme, "EOF");
-        return;
-    }
-    switch (c) {
-        case '+': current_token.type = TOKEN_PLUS; strcpy(current_token.lexeme, "+"); break;
-        case '-': current_token.type = TOKEN_MINUS; strcpy(current_token.lexeme, "-"); break;
-        case '*': current_token.type = TOKEN_MULTIPLY; strcpy(current_token.lexeme, "*"); break;
-        case '/': current_token.type = TOKEN_DIVIDE; strcpy(current_token.lexeme, "/"); break;
-        case '(': current_token.type = TOKEN_LPAREN; strcpy(current_token.lexeme, "("); break;
-        case ')': current_token.type = TOKEN_RPAREN; strcpy(current_token.lexeme, ")"); break;
-        case ',': current_token.type = TOKEN_COMMA; strcpy(current_token.lexeme, ","); break;
-        case ';': current_token.type = TOKEN_SEMICOLON; strcpy(current_token.lexeme, ";"); break;
-        case '.': current_token.type = TOKEN_PERIOD; strcpy(current_token.lexeme, "."); break;
-        default:
-            // Caractere não reconhecido
-            current_token.type = TOKEN_ERROR;
-            current_token.lexeme[0] = c;
-            current_token.lexeme[1] = '\0'; // Garante que é uma string válida
-            *boolErro = 1; // Marca erro léxico
-            fprintf(textSaida, "%s, <ERRO_LEXICO> (Caractere inválido)\n", current_token.lexeme);
-            return;
-    }
-    fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
 }
 
 // Helper para obter o nome do tipo de token

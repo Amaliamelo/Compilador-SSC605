@@ -7,8 +7,6 @@ y, ident
 PROCEDURE, PROCEDURE
 som, ident
 @, <ERRO_LEXICO> (Caractere inválido)
-Erro sintático: Esperava ';' após o nome do procedimento. Esperava 'simbolo_ponto_e_virgula', encontrou '@' ('ERRO_LEXICO').
-Ignorando token inesperado para recuperação de erro: '@' ('ERRO_LEXICO')
 ;, simbolo_ponto_e_virgula
 VAR, VAR
 a, ident
@@ -21,14 +19,28 @@ BEGIN, BEGIN
 a, ident
 :=, simbolo_atribuicao
 x, ident
-Erro sintático: Esperava 'END' após a lista de comandos. Esperava 'END', encontrou 'x' ('ident').
-Ignorando token inesperado para recuperação de erro: 'x' ('ident')
 ;, simbolo_ponto_e_virgula
 b, ident
 :=, simbolo_atribuicao
 y, ident
-Erro sintático: Faltando '.' no final do programa. Esperava 'simbolo_ponto', encontrou 'y' ('ident').
-Ignorando token inesperado para recuperação de erro: 'y' ('ident')
 ;, simbolo_ponto_e_virgula
-Compilação falhou com erros sintáticos ou léxicos.
-Erro sintático: Caracteres inesperados após o final do programa. Encontrou ';' ('simbolo_ponto_e_virgula').
+c, ident
+:=, simbolo_atribuicao
+a, ident
++, simbolo_mais
+b, ident
+END, END
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN
+x, ident
+=, simbolo_igual
+Erro sintático: Esperava ':=' para atribuicao. Esperava 'simbolo_atribuicao', encontrou '=' ('simbolo_igual').
+Ignorando token inesperado para recuperacao de erro: '=' ('simbolo_igual')
+2, numero
+Ignorando token inesperado para recuperacao de erro: '2' ('numero')
+., simbolo_ponto
+Erro sintatico: Fator esperado. Encontrou '.' ('simbolo_ponto').
+Erro sintático: Esperava 'END' apos a lista de comandos. Esperava 'END', encontrou '.' ('simbolo_ponto').
+3, numero
+Compilacao falhou com erros sintaticos ou lexicos.
+Erro sintatico: Caracteres inesperados apos o final do programa. Encontrou '3' ('numero').
