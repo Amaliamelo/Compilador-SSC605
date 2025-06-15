@@ -33,8 +33,6 @@ void match(TokenType expected_type, const char* error_message, ...) {
         panic_mode_recover(expected_type, va_arg(args, TokenType), TOKEN_EOF);
         va_end(args);
         // Após a recuperação, se o token atual é o esperado, consuma-o.
-        // Isso é crucial: se panic_mode_recover encontrou o token esperado, ele não o consome.
-        // A função match é que deve consumi-lo.
         if (current_token.type == expected_type) {
             panicMode = 0;
             getNextToken(global_TextFile, global_TextSaida, global_boolErro, global_boolSpace, panicMode);
@@ -46,8 +44,6 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
     va_list args;
     TokenType sync_token_type;
 
-    // Tokens globais de sincronização (start of major constructs)
-    // Esses são tokens que geralmente indicam o início de uma nova declaração ou comando.
     TokenType global_sync_tokens[] = {
         TOKEN_BEGIN, TOKEN_CALL, TOKEN_IF,
         TOKEN_WHILE, TOKEN_PERIOD, TOKEN_EOF
@@ -57,40 +53,35 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
 
     int found_sync = 0;
 
-    // Tentar sincronizar com o token que 'match' esperava (expected_type_for_context)
-    // ou com um dos tokens passados na lista de argumentos variáveis.
-    // ou com um token global de sincronização.
     while (current_token.type != TOKEN_EOF && !found_sync) {
-
-        // 1. Sincroniza com o token que 'match' estava esperando (se ainda não o consumiu)
-        if (current_token.type == expected_type_for_context) {
+        if (current_token.type == expected_type_for_context) { // Sincroniza com o token esperado no contexto
             found_sync = 1;
-          // fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
-         //   current_token.lexeme, getTokenTypeName(current_token.type));
+           fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
+            current_token.lexeme, getTokenTypeName(current_token.type));
           //  printf( "L --> Achei um token de sincronizacao! '%s' ('%s').\n", current_token.lexeme, getTokenTypeName(current_token.type));
             panicMode = 1;
             return;
         }
-        va_end(args);
 
         if (!found_sync) { // Sincroniza com tokens específicos passados como argumento
             va_start(args, expected_type_for_context);
             while ((sync_token_type = va_arg(args, TokenType)) != TOKEN_EOF) {
                 if (current_token.type == sync_token_type) {
                     found_sync = 1;
-                //    fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
-                //    current_token.lexeme, getTokenTypeName(current_token.type));
+                    fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
+                    current_token.lexeme, getTokenTypeName(current_token.type));
                     panicMode = 1;
                     return;
                 }
             }
+            va_end(args);
         }
 
         for (int i = 0; i < num_global_sync_tokens; ++i) { // Procura tokens de sincronização
             if (current_token.type == global_sync_tokens[i]) {
                 found_sync = 1;
-              //  fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
-            //    current_token.lexeme, getTokenTypeName(current_token.type));
+                fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
+                current_token.lexeme, getTokenTypeName(current_token.type));
                 panicMode = 1;
                 return;
             }
@@ -289,15 +280,6 @@ void mais_cmd() {
         getNextToken(global_TextFile, global_TextSaida, global_boolErro, global_boolSpace, panicMode);
         comando();
         mais_cmd();
-    } else {
-        // λ produção. Verificar se o token atual é um FOLLOW(mais_cmd)
-        // FOLLOW(mais_cmd) = {END}
-        if (!(current_token.type == TOKEN_END || current_token.type == TOKEN_PERIOD || current_token.type == TOKEN_EOF)) {
-            // Este caso pode ser um erro se não for END
-            // No entanto, o `comando()` já lida com muitos erros.
-            // Poderíamos adicionar um panic_mode_recover aqui se quisermos ser mais robustos
-            // se o token não for END e não for ; para mais_cmd.
-        }
     }
 }
 
@@ -354,22 +336,19 @@ void fator() {
         getNextToken(global_TextFile, global_TextSaida, global_boolErro, global_boolSpace, panicMode);
         expressao();
         match(TOKEN_RPAREN, "Esperava ')'",
-              TOKEN_MULTIPLY, TOKEN_DIVIDE, // FIRST(mais_fatores)
-              TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
+              TOKEN_MULTIPLY, TOKEN_DIVIDE, // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
+              TOKEN_PLUS, TOKEN_MINUS,
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
     } else {
         if (!panicMode)
         fprintf(global_TextSaida, "Erro sintatico: Fator esperado. Encontrou '%s' ('%s').\n",
                 current_token.lexeme, getTokenTypeName(current_token.type));
         *global_boolErro = 1;
         panic_mode_recover(current_token.type,
-                           TOKEN_MULTIPLY, TOKEN_DIVIDE, // FIRST(mais_fatores)
-                           TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
-                           TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
-                           TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF, // Outros FOLLOWs
-                           TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD // FIRST(fator) para caso de recursão ou início de expressão
-                           );
+                           TOKEN_MULTIPLY, TOKEN_DIVIDE, TOKEN_PLUS, TOKEN_MINUS, // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
+                           TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
+                           TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
     }
 }
 

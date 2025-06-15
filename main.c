@@ -5,11 +5,18 @@
 
 // current_token é declarada como 'extern' em lexico.h e definida em lexico.c.
 // Nao precisa definir novamente aqui.
-
 //Função Principal
 int main(){
-    FILE* TextFile = fopen("compilador.txt", "rb");
-    FILE* TextSaida = fopen("saida.txt", "w");
+    char nomeEntrada[] = "testeX.txt";
+    char nomeSaida[] = "saidaX.txt";
+
+    for (int i = 1; i < 6; i++) {
+    
+    nomeEntrada[5] = i + '0';
+    nomeSaida[5] = i + '0';
+
+    FILE* TextFile = fopen(nomeEntrada, "rb");
+    FILE* TextSaida = fopen(nomeSaida, "w");
     int boolErro = 0; // Flag de erro (léxico ou sintático)
     int boolSpace = 0; // Usado para erros léxicos e no comentário, mantém para compatibilidade
 
@@ -25,5 +32,6 @@ int main(){
 
     fclose(TextFile);
     fclose(TextSaida);
+    }
     return 0;
 }

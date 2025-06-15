@@ -1,0 +1,23 @@
+PROCEDURE, PROCEDURE
+Outer, ident
+;, simbolo_ponto_e_virgula
+PROCEDURE, PROCEDURE
+Inner, ident
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN
+x, ident
+:=, simbolo_atribuicao
+1, numero
+END, END
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN
+CALL, CALL
+Inner, ident
+END, END
+;, simbolo_ponto_e_virgula
+VAR, VAR
+Erro sintático: Faltando '.' no final do programa. Esperava 'simbolo_ponto', encontrou 'VAR' ('VAR').
+x, ident
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN
+Compilacao falhou com erros sintaticos ou lexicos.

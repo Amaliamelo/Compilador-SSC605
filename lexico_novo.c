@@ -157,7 +157,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                     fseek(textFile, -1, SEEK_CUR); // Volta o caractere não alfanumérico
                     // Depois de reportar o erro e consumir, o loop `while(1)` externo continuará
                     // tentando encontrar o próximo token válido.
-                    continue; // Volta para o início do loop `while(1)` externo
+                    return; // Retorna com TOKEN_ERROR para o analisador sintático
                 }
             }
             fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não alfanumérico de volta
@@ -208,7 +208,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                     fprintf(textSaida, "%s, <ERRO_LEXICO> (Número muito longo)\n", current_token.lexeme);
                     while ((c = fgetc(textFile)) != EOF && isdigit(c)) {} // Consome o restante
                     fseek(textFile, -1, SEEK_CUR); // Volta o caractere não dígito
-                    continue; // Volta para o início do loop `while(1)` externo
+                    return; // Retorna com TOKEN_ERROR para o analisador sintático
                 }
             }
             fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não dígito de volta
@@ -247,7 +247,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                 fprintf(textSaida, "%s, <ERRO_LEXICO> (Caractere inválido)\n", current_token.lexeme);
                 // Não retorna AQUI. Apenas reporta o erro e o loop `while(1)` externo continuará
                 // tentando encontrar o próximo token válido a partir do *próximo* caractere.
-                continue; // Volta para o início do loop `while(1)` externo para pegar o próximo caractere
+                return; // Retorna com TOKEN_ERROR para o analisador sintático
         }
         fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
         return; // Retorna o token reconhecido (mesmo que seja um dos de 1 caractere)

@@ -1,0 +1,14 @@
+PROCEDURE Outer;
+  PROCEDURE Inner;
+  BEGIN
+    x := 1
+  END;
+BEGIN
+  CALL Inner
+END;
+
+VAR x;
+
+BEGIN
+  CALL Outer
+END.
