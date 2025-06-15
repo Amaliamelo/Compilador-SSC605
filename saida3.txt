@@ -1,0 +1,25 @@
+VAR, VAR
+Erro sintático: Esperava 'END' apos a lista de comandos. Esperava 'END', encontrou 'VAR' ('VAR').
+1, numero
+abc, ident
+,, simbolo_virgula
+y, ident
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN
+y, ident
+:=, simbolo_atribuicao
+10, numero
+;, simbolo_ponto_e_virgula
+x, ident
+:=, simbolo_atribuicao
+y, ident
+$, <ERRO_LEXICO> (Caractere inválido)
+5, numero
+Erro sintático: Esperava 'END' apos a lista de comandos. Esperava 'END', encontrou '5' ('numero').
+;, simbolo_ponto_e_virgula
+END, END
+., simbolo_ponto
+{...}, comentario
+{...}, comentario
+{...}, comentario
+Compilacao falhou com erros sintaticos ou lexicos.

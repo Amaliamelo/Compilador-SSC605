@@ -56,8 +56,8 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
     while (current_token.type != TOKEN_EOF && !found_sync) {
         if (current_token.type == expected_type_for_context) { // Sincroniza com o token esperado no contexto
             found_sync = 1;
-          // fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
-         //   current_token.lexeme, getTokenTypeName(current_token.type));
+           fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
+            current_token.lexeme, getTokenTypeName(current_token.type));
           //  printf( "L --> Achei um token de sincronizacao! '%s' ('%s').\n", current_token.lexeme, getTokenTypeName(current_token.type));
             panicMode = 1;
             return;
@@ -68,8 +68,8 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
             while ((sync_token_type = va_arg(args, TokenType)) != TOKEN_EOF) {
                 if (current_token.type == sync_token_type) {
                     found_sync = 1;
-                //    fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
-                //    current_token.lexeme, getTokenTypeName(current_token.type));
+                    fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
+                    current_token.lexeme, getTokenTypeName(current_token.type));
                     panicMode = 1;
                     return;
                 }
@@ -80,8 +80,8 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
         for (int i = 0; i < num_global_sync_tokens; ++i) { // Procura tokens de sincronização
             if (current_token.type == global_sync_tokens[i]) {
                 found_sync = 1;
-              //  fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
-            //    current_token.lexeme, getTokenTypeName(current_token.type));
+                fprintf(global_TextSaida, "L --> Achei um token de sincronizacao! '%s' ('%s').\n",
+                current_token.lexeme, getTokenTypeName(current_token.type));
                 panicMode = 1;
                 return;
             }

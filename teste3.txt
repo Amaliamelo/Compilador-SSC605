@@ -1,0 +1,10 @@
+VAR 1abc, y;
+
+BEGIN
+  y := 10;
+  x := y $ 5;
+END.
+
+{erro léxico e sintático}
+{potencial problema -> Deveria continuar identificando um comando}
+{<comando> ::= ident := <expressao>}
