@@ -21,18 +21,6 @@ typedef struct {
     char denominador[MAX_DEN];
 } SSimb;
 
-// Lista de palavras reservadas da linguagem
-extern char palReservadas[20][20];
-
-// Função para reconhecer e tratar comentários iniciados com '{' e encerrados com '}'
-int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace);
-
-// Função para reconhecer números inteiros válidos
-int numero(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace);
-
-// Função para reconhecer identificadores (variáveis) ou palavras reservadas
-int identificador(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace);
-
 // Função para reconhecer operadores relacionais: <>, <=, >=, =, >, < e dois-pontos
 int relacional(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace);
 
