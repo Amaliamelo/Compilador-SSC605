@@ -1,0 +1,9 @@
+BEGIN, BEGIN
+x, ident
+@, <ERRO_LEXICO> (Caractere inválido)
+=, simbolo_igual
+1, numero
+;, simbolo_ponto_e_virgula
+END, END
+., simbolo_ponto
+Compilacao falhou com erros sintaticos ou lexicos.

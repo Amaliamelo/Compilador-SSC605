@@ -4,6 +4,7 @@
 
 // Definindo a variável global current_token UMA VEZ
 Token current_token;
+int pastEOF = 0;
 
 // Definindo a variável global palReservadas UMA VEZ
 char palReservadas[20][20]= {
@@ -42,7 +43,7 @@ int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
 
     if (!found_closing_brace) {
         // Comentário não fechado até o fim do arquivo. Erro léxico.
-        *boolErro = 1; // Marca o erro
+        *boolErro = 1;
         fprintf(textSaida, "Erro léxico: Comentário não fechado. '%s'\n", "COMENTARIO_NAO_FECHADO"); // Imprime o erro direto
         return ENCONTRADO; // ENCONTRADO no sentido de que "tratamos" a sequência (falhou)
     }
@@ -55,7 +56,10 @@ int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
 
 // --- Implementação da nova getNextToken ---
 // Esta é a função principal do analisador léxico agora.
-void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace) {
+void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace, int pastEOF) {
+
+    if (pastEOF) return;
+
     int c;
     long initial_pos;
 
@@ -69,6 +73,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
             if (c == EOF) {
                 current_token.type = TOKEN_EOF;
                 strcpy(current_token.lexeme, "EOF");
+                pastEOF = 1;
                 return; // Fim do arquivo, saímos
             }
             if (isspace(c)) {
@@ -143,6 +148,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                     strcpy(current_token.lexeme, ident_buffer);
                     current_token.type = TOKEN_ERROR;
                     *boolErro = 1;
+
                     fprintf(textSaida, "%s, <ERRO_LEXICO> (Identificador muito longo)\n", current_token.lexeme);
                     // Não retorna AQUI. Apenas reporta o erro e tenta continuar no loop externo.
                     // A `current_token.type` está TOKEN_ERROR, mas precisamos consumir o restante
@@ -151,7 +157,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                     fseek(textFile, -1, SEEK_CUR); // Volta o caractere não alfanumérico
                     // Depois de reportar o erro e consumir, o loop `while(1)` externo continuará
                     // tentando encontrar o próximo token válido.
-                    continue; // Volta para o início do loop `while(1)` externo
+                    return; // Retorna com TOKEN_ERROR para o analisador sintático
                 }
             }
             fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não alfanumérico de volta
@@ -202,7 +208,7 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                     fprintf(textSaida, "%s, <ERRO_LEXICO> (Número muito longo)\n", current_token.lexeme);
                     while ((c = fgetc(textFile)) != EOF && isdigit(c)) {} // Consome o restante
                     fseek(textFile, -1, SEEK_CUR); // Volta o caractere não dígito
-                    continue; // Volta para o início do loop `while(1)` externo
+                    return; // Retorna com TOKEN_ERROR para o analisador sintático
                 }
             }
             fseek(textFile, -1, SEEK_CUR); // Coloca o caractere não dígito de volta
@@ -237,11 +243,11 @@ void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace
                 current_token.type = TOKEN_ERROR;
                 current_token.lexeme[0] = c;
                 current_token.lexeme[1] = '\0'; // Garante que é uma string válida
-                *boolErro = 1; // Marca erro léxico
+                *boolErro = 1;
                 fprintf(textSaida, "%s, <ERRO_LEXICO> (Caractere inválido)\n", current_token.lexeme);
                 // Não retorna AQUI. Apenas reporta o erro e o loop `while(1)` externo continuará
                 // tentando encontrar o próximo token válido a partir do *próximo* caractere.
-                continue; // Volta para o início do loop `while(1)` externo para pegar o próximo caractere
+                return; // Retorna com TOKEN_ERROR para o analisador sintático
         }
         fprintf(textSaida, "%s, %s\n", current_token.lexeme, getTokenTypeName(current_token.type));
         return; // Retorna o token reconhecido (mesmo que seja um dos de 1 caractere)

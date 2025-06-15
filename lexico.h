@@ -67,7 +67,6 @@ typedef struct {
 // Lista de palavras reservadas da linguagem 
 extern char palReservadas[20][20];
 
-
 // Estrutura do Token
 typedef struct {
     TokenType type;
@@ -79,13 +78,14 @@ typedef struct {
 // Variável global para o token atual
 extern Token current_token;
 
+
 // Funções do Analisador Léxico (as suas já existentes, mas que precisarão ser modificadas)
 // Elas agora não printarão diretamente, mas preencherão a struct Token.
 // A função `getNextToken` será responsável por coordenar a chamada dessas funções.
 int comentario(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace);
 
 // Nova função para obter o próximo token e o seu tipo em string
-void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace);
+void getNextToken(FILE* textFile, FILE* textSaida, int* boolErro, int* boolSpace, int panicMode);
 const char* getTokenTypeName(TokenType type);
 
 
