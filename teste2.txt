@@ -12,5 +12,3 @@ VAR x;
 BEGIN
   CALL Outer
 END.
-
-{programa valido}

@@ -5,7 +5,6 @@
 
 // current_token é declarada como 'extern' em lexico.h e definida em lexico.c.
 // Nao precisa definir novamente aqui.
-
 //Função Principal
 int main(){
     char nomeEntrada[] = "testeX.txt";

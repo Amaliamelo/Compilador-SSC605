@@ -2,7 +2,6 @@ BEGIN, BEGIN
 x, ident
 @, <ERRO_LEXICO> (Caractere inválido)
 =, simbolo_igual
-Erro sintático: Esperava ':=' para atribuicao. Esperava 'simbolo_atribuicao', encontrou '=' ('simbolo_igual').
 1, numero
 ;, simbolo_ponto_e_virgula
 END, END
