@@ -1,8 +1,8 @@
 PROCEDURE, PROCEDURE
-Outer, ident
+p, ident
 ;, simbolo_ponto_e_virgula
 PROCEDURE, PROCEDURE
-Inner, ident
+q, ident
 ;, simbolo_ponto_e_virgula
 BEGIN, BEGIN
 x, ident
@@ -12,9 +12,13 @@ END, END
 ;, simbolo_ponto_e_virgula
 BEGIN, BEGIN
 CALL, CALL
-Inner, ident
+q, ident
 END, END
 ;, simbolo_ponto_e_virgula
-VAR, VAR
-Erro sintático: Declaracao fora de ordem ou inesperada. Esperava 'BEGIN' ou '.' (fim do programa), encontrou 'VAR' ('VAR').
-Compilacao falhou com erros sintaticos ou lexicos.
+BEGIN, BEGIN
+CALL, CALL
+p, ident
+END, END
+., simbolo_ponto
+{...}, comentario
+Compilacao bem-sucedida!

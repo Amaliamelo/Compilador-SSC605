@@ -1,6 +1,32 @@
-program teste5;
-var a, minhavariavel: integer;
-begin
-readd(minhavariavel,@,1.a23);
-a:=2*(minhavariavel+3);
-end.
+CONST a = 10, b = 20;
+VAR x, y, z;
+
+PROCEDURE P;
+VAR temp;
+BEGIN
+  temp := a + b;
+  IF temp > 25 THEN
+    x := temp
+END;
+
+PROCEDURE Q;
+BEGIN
+  WHILE x < 100 DO
+  BEGIN
+    x := x + 1;
+    CALL P
+  END
+END;
+
+BEGIN
+  x := 0;
+  CALL Q;
+  y := (a + b) * 2;
+  IF y >= 60 THEN
+  BEGIN
+    z := y / 3;
+    CALL P
+  END
+END.
+
+{programa valido}

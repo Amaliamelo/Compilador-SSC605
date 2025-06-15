@@ -1,0 +1,13 @@
+PROCEDURE p;
+  PROCEDURE q;
+  BEGIN
+    x := 1
+  END;
+BEGIN
+  CALL q
+END;
+
+BEGIN
+  CALL p
+END.
+{teste de procedimentos aninhados (sem erro)}

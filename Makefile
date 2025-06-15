@@ -5,7 +5,7 @@ CC = gcc
 TARGET = compilador
 
 # Arquivos fonte
-SRCS = main.c lexico.c
+SRCS = main.c lexico.c sintatico.c
 
 # Arquivos objeto (gerados a partir dos arquivos fonte)
 OBJS = $(SRCS:.c=.o)
