@@ -1,0 +1,24 @@
+VAR, VAR
+1, numero
+Erro sintático: Esperava um identificador apos 'VAR'. Esperava 'ident', encontrou '1' ('numero').
+Ignorando token inesperado para recuperacao de erro: '1' ('numero')
+abc, ident
+,, simbolo_virgula
+y, ident
+;, simbolo_ponto_e_virgula
+BEGIN, BEGIN
+y, ident
+:=, simbolo_atribuicao
+10, numero
+;, simbolo_ponto_e_virgula
+x, ident
+:=, simbolo_atribuicao
+y, ident
+$, <ERRO_LEXICO> (Caractere inválido)
+5, numero
+Erro sintático: Esperava 'END' apos a lista de comandos. Esperava 'END', encontrou '5' ('numero').
+Ignorando token inesperado para recuperacao de erro: '5' ('numero')
+;, simbolo_ponto_e_virgula
+Erro sintático: Faltando '.' no final do programa. Esperava 'simbolo_ponto', encontrou ';' ('simbolo_ponto_e_virgula').
+Compilacao falhou com erros sintaticos ou lexicos.
+Erro sintatico: Caracteres inesperados apos o final do programa. Encontrou ';' ('simbolo_ponto_e_virgula').
