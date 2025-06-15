@@ -122,7 +122,6 @@ void comando();
 
 // <programa> ::= <bloco> .
 void programa() {
-//    fprintf(global_TextSaida, "PROGRAMA\n");
     bloco();
     match(TOKEN_PERIOD, "Faltando '.' no final do programa", TOKEN_EOF);
     if (*global_boolErro == 0) {
@@ -134,10 +133,8 @@ void programa() {
 
 // <bloco> ::= <declaracao> <comando>
 void bloco() {
- //   fprintf(global_TextSaida, "BLOCO\n");
     declaracao();
     comando();
-
 }
 
 // <declaracao> ::= <constante> <variavel> <procedimento>
@@ -146,7 +143,17 @@ void declaracao() {
     declaracao_const();
     declaracao_var();
     declaracao_proc();
-}
+    if (current_token.type == TOKEN_VAR || current_token.type == TOKEN_CONST || current_token.type == TOKEN_PROCEDURE) {
+    fprintf(global_TextSaida, "Erro sintático: Declaracao fora de ordem ou inesperada. Esperava 'BEGIN' ou '.' (fim do programa), encontrou '%s' ('%s').\n",
+            current_token.lexeme, getTokenTypeName(current_token.type));
+    *global_boolErro = 1;
+
+    panic_mode_recover(current_token.type,
+                       TOKEN_BEGIN, TOKEN_PERIOD, TOKEN_EOF, // Tokens para onde queremos pular
+                       TOKEN_IDENT, TOKEN_CALL, TOKEN_IF, TOKEN_WHILE // Outros FIRST(comando)
+                       );
+    }
+ }
 
 // <constante> ::= CONST ident = numero <mais_const> ; | λ
 void declaracao_const() {
@@ -231,7 +238,7 @@ do {
   //  fprintf(global_TextSaida, "COMANDO\n");
  //   fprintf (global_TextSaida,"L --> current token = %s\n", current_token.lexeme);
     if (current_token.type == TOKEN_IDENT) {
-        printf("Espero :=, tenho %s \n", current_token.lexeme);
+        //printf("Espero :=, tenho %s \n", current_token.lexeme);
         panicMode = 0;
         getNextToken(global_TextFile, global_TextSaida, global_boolErro, global_boolSpace, panicMode);
         //printf("Espero :=, tenho %s \n", current_token.lexeme);

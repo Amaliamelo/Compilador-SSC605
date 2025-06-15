@@ -10,7 +10,7 @@ int main(){
     char nomeEntrada[] = "testeX.txt";
     char nomeSaida[] = "saidaX.txt";
 
-    for (int i = 1; i < 6; i++) {
+    for (int i = 1; i < 7; i++) {
     
     nomeEntrada[5] = i + '0';
     nomeSaida[5] = i + '0';

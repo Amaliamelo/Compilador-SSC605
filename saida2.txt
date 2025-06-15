@@ -16,8 +16,5 @@ Inner, ident
 END, END
 ;, simbolo_ponto_e_virgula
 VAR, VAR
-Erro sintático: Faltando '.' no final do programa. Esperava 'simbolo_ponto', encontrou 'VAR' ('VAR').
-x, ident
-;, simbolo_ponto_e_virgula
-BEGIN, BEGIN
+Erro sintático: Declaracao fora de ordem ou inesperada. Esperava 'BEGIN' ou '.' (fim do programa), encontrou 'VAR' ('VAR').
 Compilacao falhou com erros sintaticos ou lexicos.

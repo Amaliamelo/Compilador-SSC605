@@ -1,0 +1,28 @@
+VAR, VAR
+a, ident
+,, simbolo_virgula
+b, ident
+,, simbolo_virgula
+c, ident
+BEGIN, BEGIN
+Erro sintático: Esperava ';' apos a declaracao de variavel. Esperava 'simbolo_ponto_e_virgula', encontrou 'BEGIN' ('BEGIN').
+a, ident
+:=, simbolo_atribuicao
+2, numero
+;, simbolo_ponto_e_virgula
+IF, IF
+a, ident
+>, simbolo_maior
+2, numero
+b, ident
+Erro sintático: Esperava 'THEN' apos a condicao do IF. Esperava 'THEN', encontrou 'b' ('ident').
+:=, simbolo_atribuicao
+3, numero
+c, ident
+:=, simbolo_atribuicao
+@, <ERRO_LEXICO> (Caractere inválido)
++, simbolo_mais
+b, ident
+END, END
+., simbolo_ponto
+Compilacao falhou com erros sintaticos ou lexicos.

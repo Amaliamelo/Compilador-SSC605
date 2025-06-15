@@ -1,5 +1,5 @@
 BEGIN
-  x @= 1;
+  x = 1;
 END.
 
 {atribuição sem =}
