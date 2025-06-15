@@ -26,10 +26,12 @@ void match(TokenType expected_type, const char* error_message, ...) {
 
         va_list args;
         va_start(args, error_message);
-        panic_mode_recover(expected_type, va_arg(args, TokenType), TOKEN_EOF);
+        panic_mode_recover(expected_type, va_arg(args, TokenType), TOKEN_EOF); // Passa TOKEN_EOF como sentinela
         va_end(args);
 
         // Após a recuperação, se o token atual é o esperado, consuma-o.
+        // Isso é crucial: se panic_mode_recover encontrou o token esperado, ele não o consome.
+        // A função match é que deve consumi-lo.
         if (current_token.type == expected_type) {
             getNextToken(global_TextFile, global_TextSaida, global_boolErro, global_boolSpace);
         }
@@ -40,6 +42,8 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
     va_list args;
     TokenType sync_token_type;
 
+    // Tokens globais de sincronização (start of major constructs)
+    // Esses são tokens que geralmente indicam o início de uma nova declaração ou comando.
     TokenType global_sync_tokens[] = {
         TOKEN_SEMICOLON, TOKEN_BEGIN, TOKEN_VAR, TOKEN_CONST, TOKEN_PROCEDURE,
         TOKEN_IF, TOKEN_THEN, TOKEN_WHILE, TOKEN_DO, TOKEN_CALL, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF
@@ -48,28 +52,36 @@ void panic_mode_recover(TokenType expected_type_for_context, ...) {
 
     int found_sync = 0;
 
+    // Tentar sincronizar com o token que 'match' esperava (expected_type_for_context)
+    // ou com um dos tokens passados na lista de argumentos variáveis.
+    // ou com um token global de sincronização.
     while (current_token.type != TOKEN_EOF && !found_sync) {
-        if (current_token.type == expected_type_for_context) { // Sincroniza com o token esperado no contexto
+
+        // 1. Sincroniza com o token que 'match' estava esperando (se ainda não o consumiu)
+        if (current_token.type == expected_type_for_context) {
             found_sync = 1;
             break;
         }
 
-        for (int i = 0; i < num_global_sync_tokens; ++i) { // Sincroniza com tokens globais
-            if (current_token.type == global_sync_tokens[i]) {
+        // 2. Sincroniza com tokens específicos passados como argumento (FIRST/FOLLOW sets)
+        // Reinicializa args para cada iteração do loop, pois va_arg consome os argumentos
+        va_start(args, expected_type_for_context);
+        while ((sync_token_type = va_arg(args, TokenType)) != TOKEN_EOF) {
+            if (current_token.type == sync_token_type) {
                 found_sync = 1;
                 break;
             }
         }
+        va_end(args);
 
-        if (!found_sync) { // Sincroniza com tokens específicos passados como argumento
-            va_start(args, expected_type_for_context);
-            while ((sync_token_type = va_arg(args, TokenType)) != TOKEN_EOF) {
-                if (current_token.type == sync_token_type) {
-                    found_sync = 1;
-                    break;
-                }
+        if (found_sync) break; // Se encontrou sync_token_type, pare.
+
+        // 3. Sincroniza com tokens globais (último recurso)
+        for (int i = 0; i < num_global_sync_tokens; ++i) {
+            if (current_token.type == global_sync_tokens[i]) {
+                found_sync = 1;
+                break;
             }
-            va_end(args);
         }
 
         if (!found_sync) {
@@ -180,16 +192,16 @@ void declaracao_var() {
     if (current_token.type == TOKEN_VAR) {
         match(TOKEN_VAR, "Esperava 'VAR'",
               TOKEN_IDENT,
-              TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL,
-              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL, // FIRST(declaracao_proc), FIRST(comando), FOLLOW(declaracao)
+              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(bloco)
         match(TOKEN_IDENT, "Esperava um identificador apos 'VAR'",
               TOKEN_SEMICOLON, TOKEN_COMMA,
               TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL,
               TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
         mais_var();
         match(TOKEN_SEMICOLON, "Esperava ';' apos a declaracao de variavel",
-              TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL,
-              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL, // FIRST(declaracao_proc), FIRST(comando)
+              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(bloco)
     }
 }
 
@@ -218,12 +230,12 @@ void declaracao_proc() {
               TOKEN_SEMICOLON,
               TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
         match(TOKEN_SEMICOLON, "Esperava ';' apos o nome do procedimento",
-              TOKEN_CONST, TOKEN_VAR, TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL,
-              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_CONST, TOKEN_VAR, TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL, // FIRST(bloco)
+              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(bloco)
         bloco();
         match(TOKEN_SEMICOLON, "Esperava ';' apos o bloco do procedimento",
-              TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL,
-              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PROCEDURE, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, TOKEN_CALL, // FIRST(procedimento), FIRST(comando)
+              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(bloco)
         declaracao_proc();
     }
 }
@@ -238,10 +250,11 @@ void comando() {
     if (current_token.type == TOKEN_IDENT) {
         match(TOKEN_IDENT, "Esperava um identificador para atribuicao",
               TOKEN_ASSIGN,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
+        // **CORREÇÃO AQUI:** Adicionando FIRST de expressao aos tokens de sincronização do TOKEN_ASSIGN
         match(TOKEN_ASSIGN, "Esperava ':=' para atribuicao",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         expressao();
     } else if (current_token.type == TOKEN_CALL) {
         match(TOKEN_CALL, "Esperava 'CALL'",
@@ -251,40 +264,51 @@ void comando() {
               TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
     } else if (current_token.type == TOKEN_BEGIN) {
         match(TOKEN_BEGIN, "Esperava 'BEGIN'",
-              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE,
-              TOKEN_END, TOKEN_SEMICOLON, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, // FIRST(comando)
+              TOKEN_END, TOKEN_SEMICOLON, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         comando();
         mais_cmd();
         match(TOKEN_END, "Esperava 'END' apos a lista de comandos",
-              TOKEN_SEMICOLON, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_SEMICOLON, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else if (current_token.type == TOKEN_IF) {
         match(TOKEN_IF, "Esperava 'IF'",
-              TOKEN_ODD, TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_ODD, TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(condicao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW de condicao
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         condicao();
         match(TOKEN_THEN, "Esperava 'THEN' apos a condicao do IF",
-              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, // FIRST(comando)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         comando();
     } else if (current_token.type == TOKEN_WHILE) {
         match(TOKEN_WHILE, "Esperava 'WHILE'",
-              TOKEN_ODD, TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_ODD, TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(condicao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW de condicao
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         condicao();
         match(TOKEN_DO, "Esperava 'DO' apos a condicao do WHILE",
-              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, // FIRST(comando)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         comando();
     } else {
         // Produção lambda (λ) para comando:
+        // O comando pode ser vazio. Se o token atual não é um dos FIRST(comando)
+        // e também não é um dos FOLLOW(comando), então é um erro.
+        // Os FOLLOW(comando) são os tokens que podem vir DEPOIS de um comando.
         if (!(current_token.type == TOKEN_SEMICOLON || current_token.type == TOKEN_END ||
-              current_token.type == TOKEN_PERIOD || current_token.type == TOKEN_EOF)) {
+              current_token.type == TOKEN_PERIOD || current_token.type == TOKEN_EOF ||
+              // Para `mais_cmd` e outras recursões vazias, `current_token` pode ser `END`.
+              // Adicionando tokens que iniciam um novo comando (se for uma lista de comandos, ex: BEGIN ... END)
+              current_token.type == TOKEN_IDENT || current_token.type == TOKEN_CALL ||
+              current_token.type == TOKEN_BEGIN || current_token.type == TOKEN_IF ||
+              current_token.type == TOKEN_WHILE)) {
              fprintf(global_TextSaida, "Erro sintatico: Comando inesperado. Encontrou '%s' ('%s').\n",
                     current_token.lexeme, getTokenTypeName(current_token.type));
              *global_boolErro = 1;
-             panic_mode_recover(current_token.type, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+             // Recuperar para os FOLLOWs do comando ou para os FIRST de um comando se estiver em lista
+             panic_mode_recover(current_token.type,
+                                TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF,
+                                TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE);
         }
     }
 }
@@ -293,15 +317,27 @@ void comando() {
 void mais_cmd() {
     if (current_token.type == TOKEN_SEMICOLON) {
         match(TOKEN_SEMICOLON, "Esperava ';' antes do proximo comando",
-              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE,
-              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_CALL, TOKEN_BEGIN, TOKEN_IF, TOKEN_WHILE, // FIRST(comando)
+              TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         comando();
         mais_cmd();
+    } else {
+        // λ produção. Verificar se o token atual é um FOLLOW(mais_cmd)
+        // FOLLOW(mais_cmd) = {END}
+        if (!(current_token.type == TOKEN_END || current_token.type == TOKEN_PERIOD || current_token.type == TOKEN_EOF)) {
+            // Este caso pode ser um erro se não for END
+            // No entanto, o `comando()` já lida com muitos erros.
+            // Poderíamos adicionar um panic_mode_recover aqui se quisermos ser mais robustos
+            // se o token não for END e não for ; para mais_cmd.
+        }
     }
 }
 
 // <expressao> ::= <operador_unario> <termo> <mais_termos>
 void expressao() {
+    // Adicionei TOKEN_MINUS e TOKEN_PLUS aqui para a panic_mode_recover
+    // de quem chama expressao, garantindo que a recuperação saiba que esses são válidos
+    // para iniciar uma expressão.
     operador_unario();
     termo();
     mais_termos();
@@ -311,14 +347,18 @@ void expressao() {
 void operador_unario() {
     if (current_token.type == TOKEN_MINUS) {
         match(TOKEN_MINUS, "Esperava '-' para operador unario",
-              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF, // Outros FOLLOWs
+              TOKEN_PLUS, TOKEN_MINUS // Para mais_termos
+              );
     } else if (current_token.type == TOKEN_PLUS) {
         match(TOKEN_PLUS, "Esperava '+' para operador unario",
-              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF, // Outros FOLLOWs
+              TOKEN_PLUS, TOKEN_MINUS // Para mais_termos
+              );
     }
 }
 
@@ -333,9 +373,9 @@ void mais_termos() {
     if (current_token.type == TOKEN_MINUS || current_token.type == TOKEN_PLUS) {
         TokenType op_type = current_token.type;
         match(op_type, "Esperava '+' ou '-' em mais_termos",
-              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // Outros FOLLOWs
         termo();
         mais_termos();
     }
@@ -345,49 +385,52 @@ void mais_termos() {
 void fator() {
     if (current_token.type == TOKEN_IDENT) {
         match(TOKEN_IDENT, "Esperava um identificador",
-              TOKEN_MULTIPLY, TOKEN_DIVIDE, // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
-              TOKEN_PLUS, TOKEN_MINUS,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_RPAREN,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_MULTIPLY, TOKEN_DIVIDE, // FIRST(mais_fatores)
+              TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_RPAREN, // FOLLOW(fator) quando dentro de parênteses
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else if (current_token.type == TOKEN_NUMERO) {
         match(TOKEN_NUMERO, "Esperava um numero",
-              TOKEN_MULTIPLY, TOKEN_DIVIDE, // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
-              TOKEN_PLUS, TOKEN_MINUS,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_RPAREN,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_MULTIPLY, TOKEN_DIVIDE, // FIRST(mais_fatores)
+              TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_RPAREN, // FOLLOW(fator) quando dentro de parênteses
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else if (current_token.type == TOKEN_LPAREN) {
         match(TOKEN_LPAREN, "Esperava '('",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(expressao)
         expressao();
         match(TOKEN_RPAREN, "Esperava ')'",
-              TOKEN_MULTIPLY, TOKEN_DIVIDE, // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
-              TOKEN_PLUS, TOKEN_MINUS,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_MULTIPLY, TOKEN_DIVIDE, // FIRST(mais_fatores)
+              TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else {
         fprintf(global_TextSaida, "Erro sintatico: Fator esperado. Encontrou '%s' ('%s').\n",
                 current_token.lexeme, getTokenTypeName(current_token.type));
         *global_boolErro = 1;
         panic_mode_recover(current_token.type,
-                           TOKEN_MULTIPLY, TOKEN_DIVIDE, TOKEN_PLUS, TOKEN_MINUS, // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
-                           TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-                           TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+                           TOKEN_MULTIPLY, TOKEN_DIVIDE, // FIRST(mais_fatores)
+                           TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
+                           TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+                           TOKEN_RPAREN, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF, // Outros FOLLOWs
+                           TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD // FIRST(fator) para caso de recursão ou início de expressão
+                           );
     }
 }
 
 // <mais_fatores> ::= * <fator> <mais_fatores> | / <fator> <mais_fatores> | λ
 void mais_fatores() {
-    if (current_token.type == TOKEN_MULTIPLY || current_token.type == TOKEN_DIVIDE) { // Usando TOKEN_MULTIPLY, TOKEN_DIVIDE
+    if (current_token.type == TOKEN_MULTIPLY || current_token.type == TOKEN_DIVIDE) {
         TokenType op_type = current_token.type;
         match(op_type, "Esperava '*' ou '/' em mais_fatores",
-              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_PLUS, TOKEN_MINUS,
-              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // Usando TOKEN_LE, TOKEN_GE
-              TOKEN_RPAREN,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(fator)
+              TOKEN_PLUS, TOKEN_MINUS, // FIRST(mais_termos), FOLLOW(termo)
+              TOKEN_EQ, TOKEN_NEQ, TOKEN_LT, TOKEN_LE, TOKEN_GT, TOKEN_GE, // FOLLOW(expressao) (relacionais)
+              TOKEN_RPAREN, // FOLLOW(termo) quando dentro de parênteses
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         fator();
         mais_fatores();
     }
@@ -397,9 +440,9 @@ void mais_fatores() {
 void condicao() {
     if (current_token.type == TOKEN_ODD) {
         match(TOKEN_ODD, "Esperava 'ODD'",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
         expressao();
     } else {
         expressao();
@@ -412,40 +455,43 @@ void condicao() {
 void relacao() {
     if (current_token.type == TOKEN_EQ) {
         match(TOKEN_EQ, "Esperava '='",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else if (current_token.type == TOKEN_NEQ) {
         match(TOKEN_NEQ, "Esperava '<>'",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else if (current_token.type == TOKEN_LT) {
         match(TOKEN_LT, "Esperava '<'",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
-    } else if (current_token.type == TOKEN_LE) { // Usando TOKEN_LE
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
+    } else if (current_token.type == TOKEN_LE) {
         match(TOKEN_LE, "Esperava '<='",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else if (current_token.type == TOKEN_GT) {
         match(TOKEN_GT, "Esperava '>'",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
-    } else if (current_token.type == TOKEN_GE) { // Usando TOKEN_GE
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
+    } else if (current_token.type == TOKEN_GE) {
         match(TOKEN_GE, "Esperava '>='",
-              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN,
-              TOKEN_THEN, TOKEN_DO,
-              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+              TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD, // FIRST(expressao)
+              TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+              TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF); // FOLLOW(comando)
     } else {
         fprintf(global_TextSaida, "Erro sintatico: Operador relacional esperado. Encontrou '%s' ('%s').\n",
                 current_token.lexeme, getTokenTypeName(current_token.type));
         *global_boolErro = 1;
         panic_mode_recover(current_token.type,
-                           TOKEN_THEN, TOKEN_DO, TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF);
+                           TOKEN_THEN, TOKEN_DO, // FOLLOW(condicao)
+                           TOKEN_SEMICOLON, TOKEN_END, TOKEN_PERIOD, TOKEN_EOF, // FOLLOW(comando)
+                           TOKEN_PLUS, TOKEN_MINUS, TOKEN_IDENT, TOKEN_NUMERO, TOKEN_LPAREN, TOKEN_ODD // FIRST(expressao)
+                           );
     }
 }
 

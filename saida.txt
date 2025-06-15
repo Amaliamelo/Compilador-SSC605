@@ -1,29 +1,15 @@
 VAR, VAR
-a, ident
-,, simbolo_virgula
-b, ident
-,, simbolo_virgula
-c, ident
+x, ident
+;, simbolo_ponto_e_virgula
 BEGIN, BEGIN
-Erro sintático: Esperava ';' apos a declaracao de variavel. Esperava 'simbolo_ponto_e_virgula', encontrou 'BEGIN' ('BEGIN').
-a, ident
-:=, simbolo_atribuicao
-2, numero
+x, ident
+=, simbolo_igual
+Erro sintático: Esperava ':=' para atribuicao. Esperava 'simbolo_atribuicao', encontrou '=' ('simbolo_igual').
+Ignorando token inesperado para recuperacao de erro: '=' ('simbolo_igual')
+5, numero
+Ignorando token inesperado para recuperacao de erro: '5' ('numero')
 ;, simbolo_ponto_e_virgula
-IF, IF
-a, ident
->, simbolo_maior
-2, numero
-b, ident
-Erro sintático: Esperava 'THEN' apos a condicao do IF. Esperava 'THEN', encontrou 'b' ('ident').
-:=, simbolo_atribuicao
-3, numero
-;, simbolo_ponto_e_virgula
-c, ident
-:=, simbolo_atribuicao
-@, <ERRO_LEXICO> (Caractere inválido)
-+, simbolo_mais
-b, ident
+Erro sintatico: Fator esperado. Encontrou ';' ('simbolo_ponto_e_virgula').
 END, END
 ., simbolo_ponto
 Compilacao falhou com erros sintaticos ou lexicos.
